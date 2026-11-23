@@ -1,12 +1,13 @@
-/** Every 3D view has a list alternative. Reduced-motion users start in list view. */
+/** Every 3D view has a list alternative. Reduced-motion users and phones start in list view. */
 import { Box, List } from "lucide-react";
 import { useState } from "react";
 
 export type ViewMode = "3d" | "list";
 
 export function useViewMode(): [ViewMode, (m: ViewMode) => void] {
-  const reduce = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-  return useState<ViewMode>(reduce ? "list" : "3d");
+  // Reduced-motion users and phones (one-handed use in a lab) start in the list view.
+  const listFirst = typeof window !== "undefined" && (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches || window.matchMedia?.("(max-width: 767px)").matches);
+  return useState<ViewMode>(listFirst ? "list" : "3d");
 }
 
 export function ViewToggle({ mode, onChange }: { mode: ViewMode; onChange: (m: ViewMode) => void }) {

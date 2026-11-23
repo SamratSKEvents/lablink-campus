@@ -34,7 +34,7 @@ function Unit({ position, status, selected, onClick, label }: { position: [numbe
       <boxGeometry args={[0.8, 0.6, 0.7]} />
       <meshStandardMaterial color={STATUS_COLOR[status] ?? PALETTE.stone2} roughness={0.5} emissive={selected ? PALETTE.yellow : "#000"} emissiveIntensity={selected ? 0.25 : 0} />
       {selected && (
-        <Html center distanceFactor={10} position={[0, 0.8, 0]} style={{ pointerEvents: "none" }}>
+        <Html center distanceFactor={10} position={[0, 0.8, 0]} zIndexRange={[20, 0]} style={{ pointerEvents: "none" }}>
           <span className="chip tone-neutral !bg-white shadow">{label}</span>
         </Html>
       )}
@@ -68,7 +68,7 @@ export default function Twin({ labs, selected, rescueTo, onSelect }: { labs: Lab
               <boxGeometry args={[TILE.w, 0.2, TILE.d]} />
               <meshStandardMaterial color={PALETTE.stone} />
             </mesh>
-            <Html position={[l.map.x * SPACING, 0.2, l.map.z * SPACING + TILE.d / 2 + 0.4]} center distanceFactor={14} style={{ pointerEvents: "none" }}>
+            <Html position={[l.map.x * SPACING, 0.2, l.map.z * SPACING + TILE.d / 2 + 0.4]} center distanceFactor={14} zIndexRange={[20, 0]} style={{ pointerEvents: "none" }}>
               <span className="whitespace-nowrap text-sm font-semibold text-ink-2">{l.name}</span>
             </Html>
             {l.equipment.map((e) => (

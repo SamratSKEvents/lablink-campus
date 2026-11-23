@@ -58,7 +58,7 @@ export default function Session() {
             </section>
           )}
         </div>
-        <aside className="card grid gap-5 place-items-center text-center content-start" aria-label="Emergency">
+        <aside className="card grid gap-5 place-items-center text-center content-start order-first lg:order-none" aria-label="Emergency">
           <h2 className="!text-xl">Hold for help</h2>
           <button type="button" className="sos" onClick={() => setSosOpen(true)} aria-label="Open SOS (Alt+S)" aria-keyshortcuts="Alt+S">
             SOS<small>press, then hold</small>

@@ -193,7 +193,8 @@ export function Modal({
       <Dialog.Portal>
         <Dialog.Backdrop className="fixed inset-0 bg-black/20 transition-opacity duration-[var(--dur-base)] data-[starting-style]:opacity-0 data-[ending-style]:opacity-0 data-[ending-style]:duration-[var(--dur-fast)]" />
         <Dialog.Popup
-          className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-32px)] ${wide ? "max-w-2xl" : "max-w-md"} max-h-[90vh] overflow-auto card !p-6 sm:!p-8 transition-all duration-[var(--dur-base)] ease-[var(--ease-enter)] data-[starting-style]:opacity-0 data-[starting-style]:scale-95 data-[ending-style]:opacity-0 data-[ending-style]:scale-95 data-[ending-style]:duration-[var(--dur-fast)] data-[ending-style]:ease-[var(--ease-exit)]`}
+          // Phones: a bottom sheet that slides up (thumb-reachable). Larger screens: a centred dialog.
+          className={`fixed inset-x-0 bottom-0 max-h-[92dvh] rounded-t-[28px] rounded-b-none pb-[max(24px,env(safe-area-inset-bottom))] data-[starting-style]:translate-y-full data-[ending-style]:translate-y-full sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[calc(100vw-32px)] sm:rounded-[var(--radius-lg)] sm:max-h-[90vh] sm:data-[starting-style]:translate-y-[-50%] sm:data-[starting-style]:scale-95 sm:data-[ending-style]:translate-y-[-50%] sm:data-[ending-style]:scale-95 ${wide ? "sm:max-w-2xl" : "sm:max-w-md"} overflow-auto card !p-6 sm:!p-8 transition-all duration-[var(--dur-base)] ease-[var(--ease-enter)] data-[starting-style]:opacity-0 data-[ending-style]:opacity-0 data-[ending-style]:duration-[var(--dur-fast)] data-[ending-style]:ease-[var(--ease-exit)]`}
           style={{ boxShadow: "var(--shadow-float)" }}
         >
           <div className="flex items-start justify-between gap-4 mb-4">

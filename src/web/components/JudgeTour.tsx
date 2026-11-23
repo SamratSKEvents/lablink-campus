@@ -39,12 +39,12 @@ export function JudgeTour() {
   };
   return (
     <Popover.Root>
-      <Popover.Trigger className="btn btn-soft btn-sm !px-3" aria-label={`Demo guide, ${done.length} of ${STEPS.length} done`}>
-        <Compass size={16} aria-hidden="true" className="text-yellow-ink" />
+      <Popover.Trigger className="btn-ghost" aria-label={`Demo guide, ${done.length} of ${STEPS.length} done`}>
+        <Compass size={18} aria-hidden="true" className="text-yellow-ink" />
         <span className="hidden xl:inline">Demo guide</span>
       </Popover.Trigger>
       <Popover.Portal>
-        <Popover.Positioner sideOffset={8} align="end" className="z-40">
+        <Popover.Positioner sideOffset={8} align="end" collisionPadding={16} className="z-40">
           <Popover.Popup
             className="card !p-5 w-[min(400px,calc(100vw-32px))] origin-[var(--transform-origin)] transition-all duration-[var(--dur-base)] ease-[var(--ease-enter)] data-[starting-style]:opacity-0 data-[starting-style]:scale-95 data-[ending-style]:opacity-0 data-[ending-style]:scale-95 data-[ending-style]:duration-[var(--dur-fast)]"
             style={{ boxShadow: "var(--shadow-float)" }}

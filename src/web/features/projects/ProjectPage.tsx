@@ -103,7 +103,7 @@ export default function ProjectPage() {
       )}
 
       <div className="grid lg:grid-cols-[1.4fr_1fr] gap-6">
-        <section className="card" aria-labelledby="steps-title">
+        <section className="card !p-4 sm:!p-6" aria-labelledby="steps-title">
           <h2 id="steps-title" className="!text-2xl">Feasibility Passport</h2>
           <Segments colors={pp.tasks.map((t) => TASK_STATE[t.state]!.bar)} label={`${booked} of ${pp.tasks.length} steps booked`} />
           <p className="meta mb-4">{pp.riskReason}</p>
@@ -114,7 +114,7 @@ export default function ProjectPage() {
               return (
                 <li key={t.id}>
                   {i > 0 && <ArrowDown size={16} className="mx-auto text-ink-3 my-0.5" aria-hidden="true" />}
-                  <div className="task-row">
+                  <div className="task-row flex-col items-start sm:flex-row sm:items-center">
                     <Chip tone={st.tone}>{st.label}</Chip>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold">{t.name}</p>

@@ -125,6 +125,25 @@
   .btn-soft:hover:not(:disabled) {
     background: var(--bg-subtle-hover);
   }
+  /* Quiet icon button: no fill or border, 44px target, subtle hover. */
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 10px;
+    border-radius: var(--radius-pill);
+    font: 600 var(--text-small) / 1 var(--font-ui);
+    color: var(--ink-900);
+    background: transparent;
+    cursor: pointer;
+    transition: background-color var(--dur-fast) var(--ease-colour);
+  }
+  .btn-ghost:hover {
+    background: var(--bg-subtle);
+  }
   .btn-ai {
     background: var(--blue-tint);
     color: var(--blue-ink);
