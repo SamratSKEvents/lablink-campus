@@ -3,6 +3,7 @@ import { z } from "zod";
 
 const generateContent = vi.fn();
 vi.mock("@google/genai", () => ({
+  ThinkingLevel: { LOW: "LOW" },
   GoogleGenAI: class {
     models = { generateContent };
   },
