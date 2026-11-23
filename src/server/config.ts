@@ -12,7 +12,7 @@ const schema = z.object({
   /** Service-account JSON as a string (Vercel). On Cloud Run, Application Default Credentials are used instead. */
   FIREBASE_SERVICE_ACCOUNT: z.string().optional(),
   GEMINI_API_KEY: z.string().optional(),
-  GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
+  GEMINI_MODEL: z.string().default("gemini-3.5-flash"),
   GROQ_API_KEY: z.string().optional(),
   GROQ_MODEL: z.string().default("llama-3.3-70b-versatile"),
   AI_DISABLED: z.enum(["0", "1"]).default("0"),

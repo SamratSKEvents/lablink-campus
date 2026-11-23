@@ -24,9 +24,9 @@ const aiFlags = fc.option(
   fc.record(
     {
       level: fc.oneof(level, fc.constant("none" as const), fc.constant("bogus" as never)),
-      hazards: fc.oneof(strs, fc.constant([])),
-      precautions: fc.oneof(strs, fc.constant([])),
-      ppe: fc.oneof(strs, fc.constant([])),
+      hazards: fc.oneof(strs, fc.constant<string[]>([])),
+      precautions: fc.oneof(strs, fc.constant<string[]>([])),
+      ppe: fc.oneof(strs, fc.constant<string[]>([])),
       reviewRequired: fc.boolean(),
     },
     { requiredKeys: [] },

@@ -4,7 +4,7 @@
  * source, cache hits and validation failures, without the prompt (it may hold user text).
  */
 import { createHash } from "node:crypto";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import { z } from "zod";
 import { aiEnabled, config } from "../config.js";
 import { log } from "../log.js";
@@ -41,11 +41,18 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   });
 }
 
-/** JSON Schema for the model, without keys Gemini rejects. */
+const VALIDATION_ONLY = new Set(["$schema", "pattern", "minLength", "maxLength", "minItems", "maxItems", "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "additionalProperties", "format"]);
+
+/** Strip validation-only keywords recursively: the model gets the shape, zod enforces the limits. */
+function strip(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(strip);
+  if (!node || typeof node !== "object") return node;
+  return Object.fromEntries(Object.entries(node).filter(([k]) => !VALIDATION_ONLY.has(k)).map(([k, v]) => [k, strip(v)]));
+}
+
+/** JSON Schema for the model: structure only, so it stays within serving limits. */
 function modelSchema(schema: z.ZodType): Record<string, unknown> {
-  const js = z.toJSONSchema(schema, { target: "draft-7", unrepresentable: "any" }) as Record<string, unknown>;
-  delete js.$schema;
-  return js;
+  return strip(z.toJSONSchema(schema, { target: "draft-7", unrepresentable: "any" })) as Record<string, unknown>;
 }
 
 function parseJson(text: string | undefined): unknown {
@@ -55,20 +62,31 @@ function parseJson(text: string | undefined): unknown {
 }
 
 async function callGemini(o: GenerateOptions<unknown>, signalMs: number): Promise<unknown> {
-  const res = await withTimeout(
-    geminiClient().models.generateContent({
-      model: config().GEMINI_MODEL,
-      contents: o.prompt,
-      config: {
-        systemInstruction: o.system,
-        responseMimeType: "application/json",
-        responseJsonSchema: modelSchema(o.schema),
-        temperature: 0.2,
-      },
-    }),
-    signalMs,
-  );
-  return parseJson(res.text);
+  const ask = (structured: boolean) =>
+    withTimeout(
+      geminiClient().models.generateContent({
+        model: config().GEMINI_MODEL,
+        contents: o.prompt,
+        config: {
+          systemInstruction: structured ? o.system : `${o.system}
+Reply with JSON only, matching this JSON Schema:
+${JSON.stringify(modelSchema(o.schema))}`,
+          responseMimeType: "application/json",
+          ...(structured ? { responseJsonSchema: modelSchema(o.schema) } : {}),
+          temperature: 0.2,
+          // Structured extraction, not reasoning puzzles: low thinking keeps latency down.
+          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+        },
+      }),
+      signalMs,
+    );
+  try {
+    return parseJson((await ask(true)).text);
+  } catch (e) {
+    // Some schemas exceed the serving limits for constrained decoding: fall back to prompt-described JSON.
+    if (e instanceof Error && /schema/i.test(e.message)) return parseJson((await ask(false)).text);
+    throw e;
+  }
 }
 
 async function callGroq(o: GenerateOptions<unknown>, signalMs: number): Promise<unknown> {

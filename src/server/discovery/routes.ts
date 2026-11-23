@@ -5,10 +5,12 @@ import { searchSchema, type Booking, type Equipment, type Lab } from "../../shar
 import { addMinutes, ceilToSlot, overlaps, SLOT_MIN } from "../../shared/time.js";
 import { occupiesSeat } from "../allocation/context.js";
 import { freeSeat } from "../allocation/hardRules.js";
-import { explainEquivalence, parseSearch } from "../ai/uses.js";
+import { explainEquivalence, explainerSteps, parseSearch } from "../ai/uses.js";
+import { INSTRUMENTS } from "../../shared/instruments.js";
+import { z } from "zod";
 import { all, C, col, loadContext, mustGet } from "../data.js";
 import { requireAuth } from "../middleware/auth.js";
-import { handle } from "../middleware/errors.js";
+import { handle, HttpError } from "../middleware/errors.js";
 import { aiLimiter } from "../middleware/security.js";
 
 export const discoveryRouter = Router();
@@ -107,5 +109,20 @@ discoveryRouter.get(
           .map((e) => ({ id: e.id, name: e.name, classId: e.classId, classLabel: classLabel(e.classId), bench: e.bench, liveStatus: liveStatus(e, ctx.bookings, ctx.now, sos) })),
       })),
     });
+  }),
+);
+
+/** Instrument explainer: steps grounded in the manual extract, each tied to a 3D control. */
+discoveryRouter.post(
+  "/equipment/:id/explain",
+  requireAuth(),
+  aiLimiter,
+  handle(async (req, res) => {
+    const { goal } = z.object({ goal: z.string().trim().max(200).default("Get started") }).parse(req.body);
+    const eq = await mustGet<Equipment>(C.equipment, String(req.params.id), "Equipment");
+    const def = INSTRUMENTS[eq.classId];
+    if (!def) throw new HttpError(404, "There's no walkthrough for this equipment yet.", "not_found");
+    const r = await explainerSteps(eq, goal, def.controls.map((c) => c.id), def.quickStart);
+    res.json({ steps: r.data.steps, source: r.source, controls: def.controls, classId: eq.classId, name: eq.name, model: eq.model });
   }),
 );

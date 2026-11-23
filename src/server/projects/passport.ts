@@ -22,7 +22,7 @@ export interface Passport {
     durationMin: number;
     dependsOn: string[];
     state: TaskState;
-    booking?: Pick<Booking, "id" | "equipmentId" | "start" | "end" | "status">;
+    booking?: Pick<Booking, "id" | "equipmentId" | "start" | "end" | "status" | "expiresAt">;
     proposal?: Placement;
     blocker?: string;
   }[];
@@ -66,7 +66,7 @@ export function buildPassport(
       durationMin: t.durationMin,
       dependsOn: t.dependsOn,
       state,
-      ...(b ? { booking: { id: b.id, equipmentId: b.equipmentId, start: b.start, end: b.end, status: b.status } } : {}),
+      ...(b ? { booking: { id: b.id, equipmentId: b.equipmentId, start: b.start, end: b.end, status: b.status, ...(b.expiresAt ? { expiresAt: b.expiresAt } : {}) } } : {}),
       ...(proposal ? { proposal } : {}),
       ...(blocker ? { blocker } : {}),
     };

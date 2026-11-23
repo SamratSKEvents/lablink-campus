@@ -4,7 +4,7 @@ import QRCode from "qrcode";
 import { z } from "zod";
 import { config } from "../config.js";
 import { signCardToken } from "../auth/cardToken.js";
-import { all, C, col, type Notification } from "../data.js";
+import { all, C, col, publicUser, type Notification, type StoredUser } from "../data.js";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
 import { forbidden, handle } from "../middleware/errors.js";
 import { DEMO_CARDS } from "../seed/demo.js";
@@ -58,5 +58,16 @@ adminRouter.post(
   handle<AuthedRequest>(async (req, res) => {
     if (!req.actor.demo) throw forbidden("Reset is only available for the demo institution.");
     res.json({ ok: true, seeded: await seedDemo() });
+  }),
+);
+
+/** Students in the staff member's department (for certification sign-off). */
+adminRouter.get(
+  "/students",
+  requireAuth(["technician", "faculty", "admin"]),
+  handle<AuthedRequest>(async (req, res) => {
+    const q = col(C.users).where("role", "==", "student");
+    const students = await all<StoredUser>(req.actor.role === "admin" ? q : q.where("departmentId", "==", req.actor.departmentId));
+    res.json({ students: students.map(publicUser).map((u) => ({ id: u.id, name: u.name, certifications: u.certifications, tutorials: u.tutorials })) });
   }),
 );

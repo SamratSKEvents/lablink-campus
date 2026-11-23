@@ -62,6 +62,7 @@ dependsOn lists ids of earlier tasks. Also list 3-8 physical parts, each using a
 If the project is unclear, unsafe, or outside a teaching lab, set confidence "low" and explain in declineReason. ${GUARD}`,
     prompt: `Project description: ${wrap(description)}`,
     schema: planSchema,
+    timeoutMs: 25_000,
     fallback: () => {
       const t = pickTemplate(description);
       return { title: titleFrom(description), emoji: t.emoji, category: t.category, confidence: "medium", tasks: t.tasks, parts: t.parts } as AiPlan;
