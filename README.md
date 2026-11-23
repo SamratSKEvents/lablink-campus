@@ -1,8 +1,6 @@
 <div align="center">
 
-<img src="src/web/public/favicon.svg" width="72" height="72" alt="LabLink app icon">
-
-# LabLink
+<h1><img src="docs/lablink-banner.svg" width="960" alt="LabLink ? Campus laboratory resource sharing"></h1>
 
 **A campus lab assistant that helps students finish projects on time.**
 
@@ -16,14 +14,36 @@ Pick a demo ID card and tap in. No account setup required.
 
 ---
 
+## 1. Screenshots
+
+[![LabLink’s deployed landing page](docs/screenshots/landing.png)](https://lablink-campus.vercel.app/)
+
+| Demo sign-in | Feasibility Passport |
+|---|---|
+| [![Role selection and fanned demo ID cards](docs/screenshots/demo-cards.png)](docs/screenshots/demo-cards.png) | [![Robotics project with deadline, review status and ordered lab steps](docs/screenshots/passport.png)](docs/screenshots/passport.png) |
+
+| Finals Week decision | Lab analytics |
+|---|---|
+| [![Finals Week simulation with contenders, priority scores and alternatives](docs/screenshots/finals-week.png)](docs/screenshots/finals-week.png) | [![Demand heatmap and Lorenz curve](docs/screenshots/analytics.png)](docs/screenshots/analytics.png) |
+
+| Projects on a phone | Bench session on a phone | SOS on a phone |
+|---|---|---|
+| [![Mobile project list with deadline and status](docs/screenshots/phone-projects.png)](docs/screenshots/phone-projects.png) | [![Mobile bench session with SOS and Call 112](docs/screenshots/phone-session.png)](docs/screenshots/phone-session.png) | [![Emergency sheet with Call 112 and hold-to-alert control](docs/screenshots/sos.png)](docs/screenshots/sos.png) |
+
+[![Oscilloscope explainer with a highlighted control and step-by-step guidance](docs/screenshots/explainer.png)](docs/screenshots/explainer.png)
+
+The Finals Week screenshot uses a freshly seeded Firebase emulator. The other screens are from the deployed demo, with a public demo link substituted for the sign-in QR.
+
+---
+
 In a reproducible simulation of **1,000 project requests**, LabLink finished **783 projects on time** compared with **738** for first-come-first-served under the same access and safety rules. Median wait fell from **39 h to 24.1 h**. [Method, results and trade-offs](docs/benchmark-results.md)
 
 ## Contents
 
-1. [Chosen vertical and persona](#1-chosen-vertical-and-persona)
-2. [The problem, with evidence](#2-the-problem-with-evidence)
-3. [What LabLink does](#3-what-lablink-does)
-4. [Screenshots](#4-screenshots)
+1. [Screenshots](#1-screenshots)
+2. [Chosen vertical and persona](#2-chosen-vertical-and-persona)
+3. [The problem, with evidence](#3-the-problem-with-evidence)
+4. [What LabLink does](#4-what-lablink-does)
 5. [How it works: the smart assistant](#5-how-it-works-the-smart-assistant)
 6. [Approach and decision logic](#6-approach-and-decision-logic)
 7. [Architecture](#7-architecture)
@@ -39,7 +59,7 @@ In a reproducible simulation of **1,000 project requests**, LabLink finished **7
 
 ---
 
-## 1. Chosen vertical and persona
+## 2. Chosen vertical and persona
 
 **Vertical: LabLink — campus laboratory resource sharing (Education).**
 
@@ -56,7 +76,7 @@ LabLink serves four people, and adapts to whoever is holding the phone:
 
 Every role signs in with a **college ID card** (scan its QR, tap it via NFC, or a USB reader). There are no passwords, and the header always shows who you are.
 
-## 2. The problem, with evidence
+## 3. The problem, with evidence
 
 Colleges own expensive instruments that sit idle while students next door can't get access. All figures below come from primary sources ([full evidence and links](docs/research-evidence.md)); each describes its own setting.
 
@@ -71,7 +91,7 @@ Colleges own expensive instruments that sit idle while students next door can't 
 
 The problem isn't a missing calendar. It's that **nothing connects a student's project, its deadline, the equipment it needs across departments, the approvals, and safety.**
 
-## 3. What LabLink does
+## 4. What LabLink does
 
 Everything is organised around the **project**, because that's what students are actually trying to finish:
 
@@ -92,26 +112,6 @@ flowchart LR
 | **Learn** | Booked vs used, demand heatmap, fairness, **Opportunity Radar** for idle units and over-demand. | Head of department |
 
 The **Feasibility Passport** is each project's home screen and answers one question: *what's stopping this project right now?*
-
-## 4. Screenshots
-
-[![LabLink’s deployed landing page](docs/screenshots/landing.png)](https://lablink-campus.vercel.app/)
-
-| Demo sign-in | Feasibility Passport |
-|---|---|
-| [![Role selection and fanned demo ID cards](docs/screenshots/demo-cards.png)](docs/screenshots/demo-cards.png) | [![Robotics project with deadline, review status and ordered lab steps](docs/screenshots/passport.png)](docs/screenshots/passport.png) |
-
-| Finals Week decision | Lab analytics |
-|---|---|
-| [![Finals Week simulation with contenders, priority scores and alternatives](docs/screenshots/finals-week.png)](docs/screenshots/finals-week.png) | [![Demand heatmap and Lorenz curve](docs/screenshots/analytics.png)](docs/screenshots/analytics.png) |
-
-| Projects on a phone | Bench session on a phone | SOS on a phone |
-|---|---|---|
-| [![Mobile project list with deadline and status](docs/screenshots/phone-projects.png)](docs/screenshots/phone-projects.png) | [![Mobile bench session with SOS and Call 112](docs/screenshots/phone-session.png)](docs/screenshots/phone-session.png) | [![Emergency sheet with Call 112 and hold-to-alert control](docs/screenshots/sos.png)](docs/screenshots/sos.png) |
-
-[![Oscilloscope explainer with a highlighted control and step-by-step guidance](docs/screenshots/explainer.png)](docs/screenshots/explainer.png)
-
-The Finals Week screenshot uses a freshly seeded Firebase emulator. The other screens are from the deployed demo, with a public demo link substituted for the sign-in QR.
 
 ## 5. How it works: the smart assistant
 

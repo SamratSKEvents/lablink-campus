@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="260" viewBox="0 0 960 260" role="img" aria-labelledby="title description">
+  <title id="title">LabLink</title>
+  <desc id="description">Campus laboratory resource sharing.</desc>
+
+  <rect x="1" y="1" width="958" height="258" rx="27" fill="#fff7d6" stroke="#e2dfdb" stroke-width="2"/>
+
+  <g transform="translate(56 64) scale(2.0625)">
+    <rect width="64" height="64" rx="16" fill="#ffd54a"/>
+    <path d="M22 16h8v26h14v8H22z" fill="#0c0a09"/>
+    <circle cx="46" cy="20" r="6" fill="#2fcf8a"/>
+  </g>
+
+  <g font-family="system-ui, -apple-system, Segoe UI, sans-serif">
+    <text x="228" y="132" fill="#0c0a09" font-size="76" font-weight="750" letter-spacing="-4">LabLink</text>
+    <text x="232" y="177" fill="#5f5a53" font-size="28" font-weight="500">Campus laboratory resource sharing</text>
+  </g>
+
+  <g fill="none" stroke="#0c0a09" stroke-linecap="round" stroke-linejoin="round" stroke-width="4">
+    <path d="M833 81h32m-25 0v39l-31 45a11 11 0 0 0 9 17h62a11 11 0 0 0 9-17l-31-45V81" fill="#fff"/>
+    <path d="M819 154c11-8 22-10 32-4s18 7 28 1l10 14a11 11 0 0 1-9 17h-62a11 11 0 0 1-9-17z" fill="#2fcf8a"/>
+    <path d="M784 101v24m-12-12h24m104-25v18m-9-9h18" stroke="#8a6200" stroke-width="3"/>
+  </g>
+  <circle cx="839" cy="165" r="4" fill="#fff"/>
+  <circle cx="854" cy="133" r="4" fill="#2fcf8a"/>
+</svg>
