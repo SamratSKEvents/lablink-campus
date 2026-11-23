@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="260" viewBox="0 0 960 260" role="img" aria-labelledby="title description">
   <title id="title">LabLink</title>
-  <desc id="description">Campus laboratory resource sharing.</desc>
+  <desc id="description">Helping students finish their projects.</desc>
 
   <rect x="1" y="1" width="958" height="258" rx="27" fill="#fff7d6" stroke="#e2dfdb" stroke-width="2"/>
 
@@ -12,7 +12,7 @@
 
   <g font-family="system-ui, -apple-system, Segoe UI, sans-serif">
     <text x="228" y="132" fill="#0c0a09" font-size="76" font-weight="750" letter-spacing="-4">LabLink</text>
-    <text x="232" y="177" fill="#5f5a53" font-size="28" font-weight="500">Campus laboratory resource sharing</text>
+    <text x="232" y="177" fill="#5f5a53" font-size="28" font-weight="500">Helping students finish their projects</text>
   </g>
 
   <g fill="none" stroke="#0c0a09" stroke-linecap="round" stroke-linejoin="round" stroke-width="4">

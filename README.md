@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1><img src="docs/lablink-banner.svg" width="960" alt="LabLink ? Campus laboratory resource sharing"></h1>
+<h1><img src="docs/lablink-banner.svg" width="960" alt="LabLink. Helping students finish their projects."></h1>
 
 **A campus lab assistant that helps students finish projects on time.**
 
