@@ -24,6 +24,15 @@ describe("Layer 2 scheduler", () => {
     expect(new Date(r.finish!) <= new Date(project().deadline)).toBe(true);
   });
 
+  it("never schedules two of the student's tasks at the same time", () => {
+    const parallel = project({ tasks: [
+      { id: "a", name: "Print", classId: "3d-printer", durationMin: 120, dependsOn: [] },
+      { id: "b", name: "Wire", classId: "workstation", durationMin: 60, dependsOn: [] },
+    ] });
+    const [a, b] = scheduleProject(ctx(), parallel).placements;
+    expect(new Date(a!.end) <= new Date(b!.start) || new Date(b!.end) <= new Date(a!.start)).toBe(true);
+  });
+
   it("is deterministic", () => {
     expect(scheduleProject(ctx(), project())).toEqual(scheduleProject(ctx(), project()));
   });

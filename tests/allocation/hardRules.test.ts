@@ -83,6 +83,11 @@ describe("Layer 1 hard rules", () => {
     expect(checkSlot(c, { user: user(), equipment: unit(), ...at(3, 14) })).toMatchObject({ rule: "weekly_cap" });
   });
 
+  it("a person can't be in two sessions at once, even on different units", () => {
+    const c = ctx({ bookings: [booking({ userId: "u-priya", equipmentId: "printer-1" })] }); // 10:00–12:00
+    expect(checkSlot(c, { user: user(), equipment: unit(), start: ist(0, 11), end: ist(0, 13) })).toMatchObject({ rule: "self_overlap" });
+  });
+
   it("capacity counts the 15-minute buffer", () => {
     const c = ctx({ bookings: [booking()] }); // 10:00–12:00
     expect(checkSlot(c, { user: user(), equipment: unit(), start: ist(0, 12), end: ist(0, 13) })).toMatchObject({ rule: "capacity" });

@@ -122,7 +122,7 @@ export function findOptions(
   }
   if (options.length) return { options };
   // Prefer the rule that is most actionable for the student.
-  const priority: RuleId[] = ["certification", "team_certification", "fatigue_continuous", "weekly_cap", "supervision", "lone_worker", "status", "maintenance", "capacity", "fatigue_daily", "hours", "past"];
+  const priority: RuleId[] = ["certification", "self_overlap", "team_certification", "fatigue_continuous", "weekly_cap", "supervision", "lone_worker", "status", "maintenance", "capacity", "fatigue_daily", "hours", "past"];
   const rule = priority.find((r) => reasons.has(r));
   return {
     options: [],

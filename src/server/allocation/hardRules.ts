@@ -19,6 +19,7 @@ export type RuleId =
   | "fatigue_daily"
   | "fatigue_continuous"
   | "lone_worker"
+  | "self_overlap"
   | "past";
 
 export type RuleResult = { ok: true; seat: number } | { ok: false; rule: RuleId; reason: string };
@@ -91,6 +92,8 @@ export function checkSlot(ctx: EngineContext, req: SlotRequest): RuleResult {
     };
 
   const mine = userBookings(ctx, req);
+  if (mine.some((b) => overlaps(new Date(b.start), new Date(b.end), start, end)))
+    return { ok: false, rule: "self_overlap", reason: "You already have a session at that time." };
   if (durationMin > POLICY.maxContinuousMin)
     return {
       ok: false,
