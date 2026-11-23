@@ -63,6 +63,7 @@ export const cert = (classId: string, level: "full" | "supervised" = "full") => 
 export const project = (over: Partial<Project> = {}): Project => ({
   id: "p-arm",
   ownerId: "u-priya",
+  departmentId: "ece",
   team: [],
   title: "Robotic arm",
   emoji: "🦾",

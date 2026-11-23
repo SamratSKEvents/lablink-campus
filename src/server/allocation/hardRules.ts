@@ -48,7 +48,8 @@ function withinDailyWindow(start: Date, end: Date, fromMin: number, toMin: numbe
 
 function userBookings(ctx: EngineContext, req: SlotRequest): Booking[] {
   return [...ctx.bookings, ...(req.pending ?? [])].filter(
-    (b) => b.userId === req.user.id && occupiesSeat(b, ctx.now),
+    // Completed sessions still count towards fatigue and weekly caps.
+    (b) => b.userId === req.user.id && (occupiesSeat(b, ctx.now) || b.status === "completed"),
   );
 }
 

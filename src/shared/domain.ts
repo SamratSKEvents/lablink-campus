@@ -113,6 +113,7 @@ export interface Task {
 export interface Project {
   id: string;
   ownerId: string;
+  departmentId: string;
   team: string[];
   title: string;
   emoji: string;
