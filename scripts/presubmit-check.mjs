@@ -1,29 +1,44 @@
-// Competition rules: exactly one branch, repo under 10 MB (we fail at 9 MB for headroom),
-// and no secrets tracked. Run with `npm run presubmit` before submitting.
-import { execSync } from "node:child_process";
+// Competition submission checks. Run with `npm run presubmit`.
+import { spawnSync } from "node:child_process";
+import { posix } from "node:path";
 
-const sh = (c) => execSync(c, { encoding: "utf8" }).trim();
-let ok = true;
-const fail = (m) => {
-  ok = false;
-  console.error(`✗ ${m}`);
-};
+const REPO_SIZE_LIMIT_KIB = 9 * 1024; // Keep headroom under the competition's 10 MB limit.
+const KEY_PATTERN = "(AIza[0-9A-Za-z_-]{30,}|gsk_[A-Za-z0-9]{20,}|AQ[.][A-Za-z0-9_-]{30,})";
 
-const branches = sh("git branch -a --format=%(refname:short)").split("\n").filter((b) => b && !b.includes("HEAD"));
-const local = branches.filter((b) => !b.startsWith("origin/"));
-if (local.length !== 1) fail(`Expected exactly 1 branch, found ${local.length}: ${local.join(", ")}`);
-else console.info(`✓ One branch: ${local[0]}`);
+function git(args, { allowNoMatch = false } = {}) {
+  const result = spawnSync("git", args, { encoding: "utf8" });
+  if (result.error) throw result.error;
+  // git grep exits 1 for no matches. Other Git errors must fail the check.
+  if (result.status !== 0 && !(allowNoMatch && result.status === 1)) {
+    throw new Error(`git ${args[0]} failed: ${result.stderr.trim() || (result.signal ?? result.status)}`);
+  }
+  return result.stdout;
+}
 
-const stats = Object.fromEntries(sh("git count-objects -v").split("\n").map((l) => l.split(": ")));
-const kb = Number(stats["size-pack"] ?? 0) + Number(stats.size ?? 0);
-if (kb > 9 * 1024) fail(`Repository is ${(kb / 1024).toFixed(1)} MB (limit 10 MB, we stop at 9 MB)`);
-else console.info(`✓ Repository size ${(kb / 1024).toFixed(2)} MB`);
+function fail(message) {
+  process.exitCode = 1;
+  console.error(`✗ ${message}`);
+}
 
-const tracked = sh("git ls-files");
-for (const bad of [/^\.env$/m, /service-account.*\.json$/m, /firebase-adminsdk.*\.json$/m])
-  if (bad.test(tracked)) fail(`A secret-looking file is tracked: ${bad}`);
-const leaks = sh("git grep -nIE \"(AIza[0-9A-Za-z_-]{30,}|gsk_[A-Za-z0-9]{20,}|AQ[.][A-Za-z0-9_-]{30,})\" -- . \":(exclude)package-lock.json\" || true");
-if (leaks) fail(`Possible API key in tracked files:\n${leaks}`);
-else console.info("✓ No secrets tracked");
+const branches = git(["for-each-ref", "--format=%(refname:short)", "refs/heads"]).split(/\r?\n/).filter(Boolean);
+if (branches.length === 1) console.info(`✓ One branch: ${branches[0]}`);
+else fail(`Expected exactly 1 local branch, found ${branches.length}: ${branches.join(", ")}`);
 
-process.exit(ok ? 0 : 1);
+const stats = Object.fromEntries(git(["count-objects", "-v"]).trim().split(/\r?\n/).map((line) => line.split(": ")));
+const sizeKiB = Number(stats["size-pack"]) + Number(stats.size);
+if (!Number.isFinite(sizeKiB)) fail("Could not determine repository size.");
+else if (sizeKiB > REPO_SIZE_LIMIT_KIB) fail(`Repository is ${(sizeKiB / 1024).toFixed(1)} MB (9 MB presubmit threshold)`);
+else console.info(`✓ Repository size ${(sizeKiB / 1024).toFixed(2)} MB`);
+
+const trackedFiles = git(["ls-files", "-z"]).split("\0").filter(Boolean);
+const sensitivePaths = trackedFiles.filter((file) => {
+  const name = posix.basename(file).toLowerCase();
+  return (/^\.env(?:\.|$)/.test(name) && name !== ".env.example") || /(?:service-account|firebase-adminsdk).*\.json$/.test(name);
+});
+const matchedPaths = git(
+  ["grep", "--cached", "--name-only", "-z", "-I", "-E", "-e", KEY_PATTERN, "--", ".", ":(exclude)package-lock.json"],
+  { allowNoMatch: true },
+).split("\0").filter(Boolean);
+if (sensitivePaths.length) fail(`Sensitive file names in Git's index:\n${sensitivePaths.join("\n")}`);
+if (matchedPaths.length) fail(`Possible API keys in Git's index:\n${matchedPaths.join("\n")}`);
+if (!sensitivePaths.length && !matchedPaths.length) console.info("✓ No secret patterns found in Git's index");
