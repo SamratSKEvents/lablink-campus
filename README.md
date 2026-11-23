@@ -311,6 +311,13 @@ The live demo runs in the Mumbai Vercel region. The Dockerfile provides a Cloud 
 | **Testing** | **109 tests** across 82 unit, property, UI and accessibility tests and 27 Firebase emulator tests. [Slot-lock tests](tests/emulator/slotLocks.test.ts) cover competing holds, rollback, idempotency and updates after a seat is reclaimed. CI disables provider calls to exercise AI fallbacks. |
 | **Accessibility** | Phone-first layout and 44 px targets; semantic HTML and a skip link; visible focus; status always shown as colour **and** word; `aria-live` for AI output and alerts; every 3D view and chart has a list or table alternative; reduced motion respected; voice input; typed and USB-reader alternatives to camera scanning; opt-in evacuation plans; Call 112 always the largest action. |
 
+### Booking and submission fixes
+
+- **Preserve reassigned seats.** After a seat is reclaimed, cancelling the old booking leaves the replacement booking's locks intact. A late check-in on the old booking returns a conflict. Two regression tests reproduce these cases on the Firebase emulator. [Booking transaction](src/server/bookings/slotLocks.ts) · [Regression tests](tests/emulator/slotLocks.test.ts)
+- **Run presubmit on Windows.** The submission checker passes arguments directly to Git, so it works without a Unix shell. It scans the Git index and reports the paths of files that may contain credentials without printing the matched values. [Submission checker](scripts/presubmit-check.mjs)
+
+Verification passed for all **109 tests**, lint, type checking, the production build and presubmit.
+
 ## 13. Try it in 2 minutes
 
 1. Open **[lablink-campus.vercel.app](https://lablink-campus.vercel.app)** → **Try the live demo**.
