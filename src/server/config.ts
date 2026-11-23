@@ -9,6 +9,8 @@ const schema = z.object({
   PORT: z.coerce.number().int().default(8080),
   CARD_HMAC_SECRET: z.string().min(16, "CARD_HMAC_SECRET must be at least 16 characters"),
   FIREBASE_PROJECT_ID: z.string().default("demo-lablink"),
+  /** Named Firestore database (production uses prompt-wars-lab-link-db; emulators use the default). */
+  FIRESTORE_DATABASE_ID: z.string().default("(default)"),
   /** Service-account JSON as a string (Vercel). On Cloud Run, Application Default Credentials are used instead. */
   FIREBASE_SERVICE_ACCOUNT: z.string().optional(),
   GEMINI_API_KEY: z.string().optional(),

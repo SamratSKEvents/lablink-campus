@@ -19,7 +19,8 @@ function adminApp(): App {
 let firestore: Firestore | undefined;
 export function db(): Firestore {
   if (!firestore) {
-    firestore = getFirestore(adminApp());
+    const id = config().FIRESTORE_DATABASE_ID;
+    firestore = id === "(default)" ? getFirestore(adminApp()) : getFirestore(adminApp(), id);
     firestore.settings({ ignoreUndefinedProperties: true });
   }
   return firestore;
