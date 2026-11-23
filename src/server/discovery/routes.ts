@@ -77,9 +77,8 @@ discoveryRouter.get(
     const ctx = await loadContext();
     const sos = await activeSosEquipment();
     const ids = ctx.equivalences.filter(([a, b]) => a === eq.id || b === eq.id).map(([a, b]) => (a === eq.id ? b : a));
-    const equivalents = await Promise.all(
-      ctx.equipment.filter((e) => ids.includes(e.id)).map(async (e) => ({ id: e.id, name: e.name, model: e.model, ...(await explainEquivalence(eq, e)) })),
-    );
+    // AI explanations load per row (GET .../equivalents/:other), so the page renders instantly.
+    const equivalents = ctx.equipment.filter((e) => ids.includes(e.id)).map((e) => ({ id: e.id, name: e.name, model: e.model }));
     const schedule = ctx.bookings
       .filter((b) => b.equipmentId === eq.id && occupiesSeat(b, ctx.now) && new Date(b.end) > ctx.now)
       .sort((a, b) => a.start.localeCompare(b.start))
@@ -91,6 +90,21 @@ discoveryRouter.get(
       equivalents,
       schedule,
     });
+  }),
+);
+
+/** Why two verified-equivalent units are interchangeable, in plain words (AI explains, never decides). */
+discoveryRouter.get(
+  "/equipment/:id/equivalents/:other",
+  requireAuth(),
+  aiLimiter,
+  handle(async (req, res) => {
+    const a = await mustGet<Equipment>(C.equipment, String(req.params.id), "Equipment");
+    const b = await mustGet<Equipment>(C.equipment, String(req.params.other), "Equipment");
+    const ctx = await loadContext();
+    if (!ctx.equivalences.some(([x, y]) => (x === a.id && y === b.id) || (x === b.id && y === a.id))) throw new HttpError(404, "These units aren't verified equivalents.", "not_found");
+    const r = await explainEquivalence(a, b);
+    res.json({ explanation: r.data.explanation, source: r.source });
   }),
 );
 

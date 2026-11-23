@@ -7,17 +7,24 @@ import { formatRange } from "@shared/time";
 import { api, post } from "../../lib/api";
 import { useSession } from "../../lib/auth";
 import type { Equipment, Lab, LiveStatus } from "../../lib/types";
-import { AiNote, Chip, ErrorNote, Loading, LIVE_STATUS, Modal, PinDialog, useToast } from "../../components/ui";
+import { AiNote, Chip, ErrorNote, Loading, LIVE_STATUS, Modal, PinDialog, Spinner, useToast } from "../../components/ui";
 import { ClassIcon } from "./ClassIcon";
 
 interface Detail {
   equipment: Equipment & { classLabel: string; liveStatus: LiveStatus };
   lab?: Lab;
-  equivalents: { id: string; name: string; model: string; data: { explanation: string }; source: string }[];
+  equivalents: { id: string; name: string; model: string }[];
   schedule: { start: string; end: string; status: string; seat: number }[];
 }
 
 export const EXPLAINER_CLASSES = ["oscilloscope", "3d-printer"];
+
+const SPEC_LABELS: Record<string, string> = {
+  bandwidthMHz: "Bandwidth (MHz)",
+  channels: "Channels",
+  sampleRateMSs: "Sample rate (MS/s)",
+  buildVolumeL: "Build volume (L)",
+};
 
 export default function EquipmentPage() {
   const { id = "" } = useParams();
@@ -71,10 +78,7 @@ export default function EquipmentPage() {
           <h2 id="eqv" className="!text-xl">Can I use something else?</h2>
           {equivalents.length === 0 && <p className="meta">No verified equivalents yet.</p>}
           {equivalents.map((q) => (
-            <div key={q.id} className="grid gap-2">
-              <Link to={`/equipment/${q.id}`} className="font-semibold underline underline-offset-4">{q.name} · {q.model}</Link>
-              <AiNote source={q.source}>{q.data.explanation}</AiNote>
-            </div>
+            <Equivalent key={q.id} unitId={e.id} other={q} />
           ))}
           <p className="meta">Equivalence is decided by spec rules and technicians. AI only explains it.</p>
         </section>
@@ -86,7 +90,7 @@ export default function EquipmentPage() {
           <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {Object.entries(e.specs).map(([k, v]) => (
               <div key={k}>
-                <dt className="meta">{k.replace(/([A-Z])/g, " $1").toLowerCase()}</dt>
+                <dt className="meta">{SPEC_LABELS[k] ?? k}</dt>
                 <dd className="font-display text-2xl">{v}</dd>
               </div>
             ))}
@@ -99,6 +103,24 @@ export default function EquipmentPage() {
         {(user?.role === "technician" || user?.role === "admin") && <StatusChange equipmentId={e.id} current={e.status} />}
       </div>
     </article>
+  );
+}
+
+function Equivalent({ unitId, other }: { unitId: string; other: { id: string; name: string; model: string } }) {
+  const q = useQuery({ queryKey: ["equivalent", unitId, other.id], queryFn: () => api<{ explanation: string; source: string }>(`/equipment/${unitId}/equivalents/${other.id}`), staleTime: Infinity });
+  return (
+    <div className="grid gap-2">
+      <Link to={`/equipment/${other.id}`} className="font-semibold underline underline-offset-4">
+        {other.name} · {other.model}
+      </Link>
+      {q.data ? (
+        <AiNote source={q.data.source}>{q.data.explanation}</AiNote>
+      ) : (
+        <p className="ai-bubble inline-flex items-center gap-2 text-blue-ink" role="status">
+          <Spinner /> Explaining why it's equivalent…
+        </p>
+      )}
+    </div>
   );
 }
 
