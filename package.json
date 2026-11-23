@@ -21,7 +21,6 @@
     "test:coverage": "vitest run --coverage",
     "test:emulator": "npx -y firebase-tools@latest emulators:exec --only auth,firestore --project demo-lablink \"vitest run --config vitest.emulator.config.ts\"",
     "seed": "tsx --env-file-if-exists=.env scripts/seed.ts",
-    "demo-cards": "tsx --env-file-if-exists=.env scripts/make-demo-cards.ts",
     "benchmark": "tsx scripts/benchmark.ts",
     "presubmit": "node scripts/presubmit-check.mjs"
   },
