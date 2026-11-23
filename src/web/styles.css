@@ -210,8 +210,10 @@
       transform var(--dur-base) var(--ease-enter),
       box-shadow var(--dur-base) var(--ease-colour);
   }
+  /* Lift via an outline-free shadow and a 2px move only, so the hover target never
+     slides out from under the cursor (no edge flicker). */
   .card-lift:hover {
-    transform: translateY(-3px) rotate(-0.4deg);
+    transform: translateY(-2px);
     box-shadow: var(--shadow-float);
   }
   .appicon {

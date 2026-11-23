@@ -47,8 +47,26 @@ function withinDailyWindow(start: Date, end: Date, fromMin: number, toMin: numbe
   return istDayKey(start) === istDayKey(new Date(end.getTime() - 1)) && s >= fromMin && s + durationMin <= toMin;
 }
 
+/**
+ * Per-snapshot index of bookings by unit and by user, cached on the bookings array
+ * itself (WeakMap), so repeated slot checks are O(bookings for that unit/user).
+ */
+const indexes = new WeakMap<Booking[], { byEq: Map<string, Booking[]>; byUser: Map<string, Booking[]> }>();
+function indexOf(bookings: Booking[]) {
+  let ix = indexes.get(bookings);
+  if (!ix) {
+    ix = { byEq: new Map(), byUser: new Map() };
+    for (const b of bookings) {
+      ix.byEq.set(b.equipmentId, [...(ix.byEq.get(b.equipmentId) ?? []), b]);
+      ix.byUser.set(b.userId, [...(ix.byUser.get(b.userId) ?? []), b]);
+    }
+    indexes.set(bookings, ix);
+  }
+  return ix;
+}
+
 function userBookings(ctx: EngineContext, req: SlotRequest): Booking[] {
-  return [...ctx.bookings, ...(req.pending ?? [])].filter(
+  return [...(indexOf(ctx.bookings).byUser.get(req.user.id) ?? []), ...(req.pending ?? [])].filter(
     // Completed sessions still count towards fatigue and weekly caps.
     (b) => b.userId === req.user.id && (occupiesSeat(b, ctx.now) || b.status === "completed"),
   );
@@ -100,16 +118,21 @@ export function checkSlot(ctx: EngineContext, req: SlotRequest): RuleResult {
       rule: "fatigue_continuous",
       reason: `Sessions are capped at ${POLICY.maxContinuousMin / 60} hours in a row. Split it up and take a break.`,
     };
-  if (hazard === "medium" || hazard === "high") {
-    const day = istDayKey(start);
-    const dayMin = mine
-      .filter((b) => istDayKey(new Date(b.start)) === day)
-      .reduce((s, b) => s + (new Date(b.end).getTime() - new Date(b.start).getTime()) / 60_000, 0);
+  // Fatigue: a day that includes any hazardous session is capped at 8 lab hours in total,
+  // whichever session is booked last.
+  const day = istDayKey(start);
+  const sameDay = mine.filter((b) => istDayKey(new Date(b.start)) === day);
+  const hazardous = (id: string) => {
+    const h = hazardOf(ctx.equipment.find((e) => e.id === id) ?? eq);
+    return h === "medium" || h === "high";
+  };
+  if (hazard === "medium" || hazard === "high" || sameDay.some((b) => hazardous(b.equipmentId))) {
+    const dayMin = sameDay.reduce((s, b) => s + (new Date(b.end).getTime() - new Date(b.start).getTime()) / 60_000, 0);
     if (dayMin + durationMin > POLICY.maxDailyLabHours * 60)
       return {
         ok: false,
         rule: "fatigue_daily",
-        reason: `That would be over ${POLICY.maxDailyLabHours} lab hours today on hazardous equipment. A rested slot is safer.`,
+        reason: `That would be over ${POLICY.maxDailyLabHours} lab hours today with hazardous work. A rested slot is safer.`,
       };
   }
 
@@ -134,7 +157,7 @@ export function checkSlot(ctx: EngineContext, req: SlotRequest): RuleResult {
 export function freeSeat(ctx: EngineContext, eq: Equipment, start: Date, end: Date, pending: Booking[] = []): number {
   const buf = POLICY.bufferMin * 60_000;
   const taken = new Set(
-    [...ctx.bookings, ...pending]
+    [...(indexOf(ctx.bookings).byEq.get(eq.id) ?? []), ...pending]
       .filter(
         (b) =>
           b.equipmentId === eq.id &&

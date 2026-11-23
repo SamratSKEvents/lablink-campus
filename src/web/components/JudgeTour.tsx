@@ -39,8 +39,8 @@ export function JudgeTour() {
   };
   return (
     <Popover.Root>
-      <Popover.Trigger className="btn btn-yellow btn-sm !px-3" aria-label={`Demo guide, ${done.length} of ${STEPS.length} done`}>
-        <Compass size={16} aria-hidden="true" />
+      <Popover.Trigger className="btn btn-soft btn-sm !px-3" aria-label={`Demo guide, ${done.length} of ${STEPS.length} done`}>
+        <Compass size={16} aria-hidden="true" className="text-yellow-ink" />
         <span className="hidden xl:inline">Demo guide</span>
       </Popover.Trigger>
       <Popover.Portal>

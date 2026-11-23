@@ -218,10 +218,10 @@ export function Dumbbell({ rows }: { rows: { name: string; booked: number; used:
                 <span className="absolute top-1/2 w-3 h-3 -mt-1.5 -ml-1.5 rounded-full ring-2 ring-white" style={{ left: `${(r.used / max) * 100}%`, background: SERIES.used }} />
                 <span className="absolute top-1/2 w-3 h-3 -mt-1.5 -ml-1.5 rounded-full ring-2 ring-white" style={{ left: `${(r.booked / max) * 100}%`, background: SERIES.booked }} />
               </span>
-              <span className="text-sm tabular-nums text-ink-2 whitespace-nowrap min-w-36 text-right">
+              <span className="text-sm tabular-nums text-ink-2 whitespace-nowrap min-w-52 text-right">
                 <span className="sr-only">{r.name}: </span>
                 {r.used}h used of {r.booked}h
-                {hover === i && gapH > 0 && <span className="block text-orange-ink">{gapH}h unused</span>}
+                {gapH > 0 && <span className="text-orange-ink"> · {gapH}h unused</span>}
               </span>
             </li>
           );

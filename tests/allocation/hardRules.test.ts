@@ -75,6 +75,18 @@ describe("Layer 1 hard rules", () => {
     expect(checkSlot(c, { user: user(), equipment: iron, start: ist(0, 17, 30), end: ist(0, 18, 30) })).toMatchObject({ rule: "fatigue_daily" });
   });
 
+  it("fatigue: a later non-hazardous session can't push a hazardous day past 8 hours", () => {
+    const iron = unit({ id: "iron-1", classId: "soldering-station", name: "Iron 1" });
+    const c = ctx({
+      equipment: [...ctx().equipment, iron],
+      bookings: [
+        booking({ id: "a", userId: "u-priya", equipmentId: "iron-1", start: ist(0, 9).toISOString(), end: ist(0, 13).toISOString() }),
+        booking({ id: "b", userId: "u-priya", equipmentId: "printer-1", start: ist(0, 13, 15).toISOString(), end: ist(0, 17, 15).toISOString() }),
+      ],
+    });
+    expect(checkSlot(c, { user: user(), equipment: unit(), start: ist(0, 17, 30), end: ist(0, 18, 30) })).toMatchObject({ rule: "fatigue_daily" });
+  });
+
   it("weekly cap per equipment class", () => {
     const many = [0, 1, 2].map((d) =>
       booking({ id: `w${d}`, userId: "u-priya", start: ist(d, 9).toISOString(), end: ist(d, 13).toISOString() }),
