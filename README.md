@@ -294,7 +294,7 @@ In the benchmark, the LabLink strategy commits complete, deadline-feasible chain
 | **Firebase Authentication** | Custom tokens minted from ID-card sign-in, carrying role claims; revocation on lost cards |
 | **Cloud Firestore** (Standard, `asia-south1` Mumbai) | All data; **transactions** guarantee no double-booking; least-privilege security rules deny every client write |
 | **Firebase Admin SDK** | Server-side Firestore and Auth (token minting, `verifyIdToken` with revocation check) |
-| **Firebase Local Emulator Suite** | Local development and 25 integration tests (API flow, concurrency, security rules) |
+| **Firebase Local Emulator Suite** | Local development and 27 integration tests (API flow, concurrency, security rules) |
 | **Firebase CLI** | Deploys Firestore rules and indexes |
 | **Google Cloud Run** (ready) | Multi-stage `Dockerfile`; `gcloud run deploy --source .` deploys the same app |
 
@@ -305,10 +305,10 @@ The live demo runs in the Mumbai Vercel region. The Dockerfile provides a Cloud 
 | Area | Evidence |
 |---|---|
 | **Problem statement alignment** | All five capabilities are modules and screens: discovery, intelligent slot booking, project-based requests, faculty approvals, fair and feasible conflict resolution driven by deadlines, availability and requirements. Measured against FCFS. |
-| **Code quality** | Strict TypeScript end to end; modules named after the requirements; shared zod schemas ([`domain.ts`](src/shared/domain.ts)); a pure engine with no I/O; every module has a doc comment explaining why; ESLint + Prettier; small focused files. |
+| **Code quality** | Strict TypeScript and [shared Zod schemas](src/shared/domain.ts). The [allocation engine](src/server/allocation) operates on an in-memory snapshot. [Booking transactions](src/server/bookings/slotLocks.ts) handle Firestore writes and verify lock ownership before updating or releasing a seat. CI runs lint, type checks, tests and the build. |
 | **Security** | HMAC-signed card tokens with constant-time verification and revocation; Firebase custom tokens with server-side role claims and `checkRevoked`; bcrypt staff PINs with 15-minute lockout after 5 tries; zod validation on every input; helmet CSP and security headers; rate limits; Firestore rules that deny all client writes ([tested](tests/emulator/rules.test.ts)); AI output treated as untrusted with a prompt-injection guard; secrets only in environment variables (enforced by `npm run presubmit`). |
 | **Efficiency** | Code-split routes; three.js loads only when a 3D view opens; indexed booking lookups in the engine; AI caching and in-flight de-duplication; AI-heavy panels (copilot, equivalence) load per item so pages render instantly; lazy slot expiry (no cron); Mumbai region; phones default to light list views. |
-| **Testing** | **107 tests**: 82 unit/property/UI/accessibility tests (Guardian property tests with fast-check, engine rules, scheduler, fairness, rescue, card tokens, PIN lockout, AI fallbacks, axe-core) + 25 on the Firebase emulators (**20 simultaneous holds → exactly 1 wins**, capacity, atomic rollback, idempotency, the full API flow, security rules) + benchmark invariants. CI runs everything with AI disabled so every fallback is exercised. |
+| **Testing** | **109 tests** across 82 unit, property, UI and accessibility tests and 27 Firebase emulator tests. [Slot-lock tests](tests/emulator/slotLocks.test.ts) cover competing holds, rollback, idempotency and updates after a seat is reclaimed. CI disables provider calls to exercise AI fallbacks. |
 | **Accessibility** | Phone-first layout and 44 px targets; semantic HTML and a skip link; visible focus; status always shown as colour **and** word; `aria-live` for AI output and alerts; every 3D view and chart has a list or table alternative; reduced motion respected; voice input; typed and USB-reader alternatives to camera scanning; opt-in evacuation plans; Call 112 always the largest action. |
 
 ## 13. Try it in 2 minutes
@@ -339,7 +339,7 @@ Without an AI key, every AI feature uses its deterministic fallback, so the whol
 
 ```bash
 npm test               # 82 unit, property, UI and accessibility tests
-npm run test:emulator  # 25 API, concurrency and security-rules tests
+npm run test:emulator  # 27 API, concurrency and security-rules tests
 npm run benchmark      # writes docs/benchmark-results.md
 npm run presubmit      # one branch, < 9 MB, no secrets tracked
 ```

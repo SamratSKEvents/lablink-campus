@@ -7,36 +7,28 @@
  * if any lock is taken, nothing is reserved. Expired holds and no-shows are treated as
  * free inside the transaction (lazy expiry), so correctness never depends on a cron job.
  *
- * ponytail: the 15-minute buffer is enforced by the engine before locking, not by locks;
- * a race on two *adjacent* bookings can shave the buffer, never double-book a seat.
+ * The engine checks the 15-minute buffer before locking. Concurrent bookings
+ * for adjacent slots can shorten the buffer because it is outside the lock interval.
  */
-import { randomUUID } from "node:crypto";
-import type { Booking } from "../../shared/domain.js";
+import { ACTIVE_BOOKING_STATUSES, type Booking } from "../../shared/domain.js";
 import { slotKey, slotsIn } from "../../shared/time.js";
-import { occupiesSeat } from "../allocation/context.js";
+import { occupiesSeat, type SeatOccupancy } from "../allocation/context.js";
 import { POLICY } from "../allocation/policy.js";
 import type { Placement } from "../allocation/scheduler.js";
 import { C, col } from "../data.js";
 import { db } from "../firebase.js";
 import { HttpError } from "../middleware/errors.js";
 
-interface Lock {
+interface Lock extends SeatOccupancy {
   bookingId: string;
-  status: Booking["status"];
-  start: string;
-  expiresAt?: string;
-  checkedInAt?: string;
 }
+
+type StoredBooking = Omit<Booking, "id"> & { lockIds?: string[] };
 
 export const lockId = (equipmentId: string, slot: Date, seat: number) => `${equipmentId}_${slotKey(slot)}_${seat}`;
 
 function lockIdsFor(p: { equipmentId: string; start: string; end: string; seat: number }): string[] {
   return slotsIn(new Date(p.start), new Date(p.end)).map((s) => lockId(p.equipmentId, s, p.seat));
-}
-
-function lockIsFree(l: Lock | undefined, now: Date): boolean {
-  if (!l) return true;
-  return !occupiesSeat({ id: l.bookingId, projectId: "", taskId: "", equipmentId: "", userId: "", start: l.start, end: l.start, seat: 0, status: l.status, expiresAt: l.expiresAt, checkedInAt: l.checkedInAt }, now);
 }
 
 export class SlotTakenError extends HttpError {
@@ -58,7 +50,8 @@ export async function holdBundle(args: {
   buddyId?: string;
 }): Promise<{ bookings: Booking[]; replayed: boolean }> {
   const now = args.now ?? new Date();
-  const lockIds = args.placements.flatMap(lockIdsFor);
+  const bundle = args.placements.map((placement) => ({ placement, lockIds: lockIdsFor(placement) }));
+  const lockIds = bundle.flatMap((item) => item.lockIds);
   if (lockIds.length > POLICY.maxLocksPerBundle) throw new HttpError(422, "This plan is too large to book at once. Book it in parts.", "bundle_too_large");
   const idemRef = col(C.idempotency).doc(`${args.userId}_${args.idempotencyKey}`);
   const expiresAt = new Date(now.getTime() + POLICY.holdExpiryMin * 60_000).toISOString();
@@ -72,28 +65,28 @@ export async function holdBundle(args: {
     }
     const refs = lockIds.map((id) => col(C.slotLocks).doc(id));
     const snaps = refs.length ? await tx.getAll(...refs) : [];
-    if (snaps.some((s) => !lockIsFree(s.exists ? (s.data() as Lock) : undefined, now))) throw new SlotTakenError();
+    if (snaps.some((snap) => snap.exists && occupiesSeat(snap.data() as Lock, now))) throw new SlotTakenError();
 
-    const bookings: Booking[] = args.placements.map((p) => {
+    const bookings: Booking[] = bundle.map(({ placement, lockIds }) => {
       const ref = col(C.bookings).doc();
       const b: Booking & { lockIds: string[]; createdAt: string } = {
         id: ref.id,
         projectId: args.projectId,
-        taskId: p.taskId,
-        equipmentId: p.equipmentId,
+        taskId: placement.taskId,
+        equipmentId: placement.equipmentId,
         userId: args.userId,
-        start: p.start,
-        end: p.end,
-        seat: p.seat,
+        start: placement.start,
+        end: placement.end,
+        seat: placement.seat,
         status: "held",
         expiresAt,
         ...(args.buddyId ? { buddyId: args.buddyId } : {}),
-        lockIds: lockIdsFor(p),
+        lockIds,
         createdAt: now.toISOString(),
       };
       const { id: _id, ...data } = b;
       tx.set(ref, data);
-      for (const lid of b.lockIds) tx.set(col(C.slotLocks).doc(lid), { bookingId: ref.id, status: "held", start: p.start, expiresAt } satisfies Lock);
+      for (const id of lockIds) tx.set(col(C.slotLocks).doc(id), { bookingId: ref.id, status: "held", start: placement.start, expiresAt } satisfies Lock);
       return b;
     });
     tx.set(idemRef, { bookingIds: bookings.map((b) => b.id), at: now.toISOString() });
@@ -101,21 +94,41 @@ export async function holdBundle(args: {
   });
 }
 
-/** Move a user's held bookings to confirmed (after re-checking rules in the route). */
-export async function setBookingStatus(bookingIds: string[], status: Booking["status"], extra: Partial<Booking> = {}, now = new Date()) {
+/** Change booking status and update only the seat locks that the booking still owns. */
+export async function setBookingStatus(
+  bookingIds: string[],
+  status: Exclude<Booking["status"], "held">,
+  extra: Pick<Booking, "checkedInAt"> = {},
+  now = new Date(),
+) {
+  if (!bookingIds.length) return;
+  const releasesSeat = !ACTIVE_BOOKING_STATUSES.includes(status);
   await db().runTransaction(async (tx) => {
-    const snaps = await tx.getAll(...bookingIds.map((id) => col(C.bookings).doc(id)));
-    for (const s of snaps) {
-      if (!s.exists) continue;
-      const b = s.data() as Booking & { lockIds: string[] };
-      if (b.status === "held" && b.expiresAt && new Date(b.expiresAt) <= now && status === "confirmed")
+    const bookingSnapshots = await tx.getAll(...bookingIds.map((id) => col(C.bookings).doc(id)));
+    const bookings = bookingSnapshots.filter((snap) => snap.exists).map((snap) => ({
+      ref: snap.ref,
+      booking: snap.data() as StoredBooking,
+    }));
+    const lockIds = new Set(bookings.flatMap(({ booking }) => booking.lockIds ?? []));
+    const lockRefs = [...lockIds].map((id) => col(C.slotLocks).doc(id));
+    const lockSnapshots = lockRefs.length ? await tx.getAll(...lockRefs) : [];
+    const ownerByLockId = new Map(lockSnapshots.map((snap) => [snap.id, (snap.data() as Lock | undefined)?.bookingId]));
+
+    for (const { ref, booking } of bookings) {
+      if (booking.status === "held" && booking.expiresAt && new Date(booking.expiresAt) <= now && status === "confirmed") {
         throw new HttpError(409, "Your hold expired. Please plan again.", "hold_expired");
-      tx.update(s.ref, { status, ...extra, ...(status === "confirmed" ? { expiresAt: null } : {}) });
-      const release = ["cancelled", "released", "no_show", "completed"].includes(status);
-      for (const lid of b.lockIds ?? []) {
-        const ref = col(C.slotLocks).doc(lid);
-        if (release) tx.delete(ref);
-        else tx.set(ref, { bookingId: s.id, status, start: b.start, ...(extra.checkedInAt ? { checkedInAt: extra.checkedInAt } : {}) }, { merge: false });
+      }
+      const expectedLocks = booking.lockIds ?? [];
+      const ownedLocks = expectedLocks.filter((id) => ownerByLockId.get(id) === ref.id);
+      if (!releasesSeat && ownedLocks.length !== expectedLocks.length) {
+        throw new HttpError(409, "This booking no longer owns its time slots. Please plan again.", "booking_slots_lost");
+      }
+
+      tx.update(ref, { status, ...extra, ...(status === "confirmed" ? { expiresAt: null } : {}) });
+      for (const id of ownedLocks) {
+        const lockRef = col(C.slotLocks).doc(id);
+        if (releasesSeat) tx.delete(lockRef);
+        else tx.set(lockRef, { bookingId: ref.id, status, start: booking.start, ...extra } satisfies Lock);
       }
     }
   });
@@ -129,5 +142,3 @@ export async function replayIdempotent(userId: string, key: string): Promise<Boo
   const snaps = ids.length ? await db().getAll(...ids.map((id) => col(C.bookings).doc(id))) : [];
   return snaps.map((s) => ({ id: s.id, ...s.data() }) as Booking);
 }
-
-export const newIdempotencyKey = () => randomUUID();

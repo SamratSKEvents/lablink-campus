@@ -23,11 +23,14 @@ export function hazardOf(eq: Equipment): "none" | "low" | "medium" | "high" {
   return classById(eq.classId)?.hazard ?? "low";
 }
 
+/** Fields shared by booking records and their seat locks. */
+export type SeatOccupancy = Pick<Booking, "status" | "start" | "expiresAt" | "checkedInAt">;
+
 /**
  * Whether a booking currently occupies its seat. Lazy expiry: a hold past its
  * expiresAt, or a confirmed booking with no check-in after the grace window, is free.
  */
-export function occupiesSeat(b: Booking, now: Date): boolean {
+export function occupiesSeat(b: SeatOccupancy, now: Date): boolean {
   if (!ACTIVE_BOOKING_STATUSES.includes(b.status)) return false;
   if (b.status === "held" && b.expiresAt && new Date(b.expiresAt) <= now) return false;
   if (b.status === "confirmed") {

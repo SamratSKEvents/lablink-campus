@@ -4,7 +4,7 @@
  */
 import { randomUUID } from "node:crypto";
 import { beforeEach, describe, expect, it } from "vitest";
-import { holdBundle } from "../../src/server/bookings/slotLocks.js";
+import { holdBundle, setBookingStatus } from "../../src/server/bookings/slotLocks.js";
 import { C, col } from "../../src/server/data.js";
 import { db } from "../../src/server/firebase.js";
 import type { Placement } from "../../src/server/allocation/scheduler.js";
@@ -55,6 +55,35 @@ describe("slot locks (emulator)", () => {
     const later = new Date(past.getTime() + 31 * 60_000);
     const r = await holdBundle({ userId: "b", projectId: "pb", placements: [place()], idempotencyKey: randomUUID(), now: later });
     expect(r.bookings[0]!.userId).toBe("b");
+  });
+
+  it("cancelling an expired booking keeps the replacement's seat locks", async () => {
+    const now = new Date("2030-01-07T00:00:00Z");
+    const original = await holdBundle({ userId: "a", projectId: "pa", placements: [place()], idempotencyKey: randomUUID(), now });
+    const later = new Date("2030-01-07T00:31:00Z");
+    const replacement = await holdBundle({ userId: "b", projectId: "pb", placements: [place()], idempotencyKey: randomUUID(), now: later });
+
+    await setBookingStatus([original.bookings[0]!.id], "cancelled", {}, later);
+
+    const locks = await col(C.slotLocks).get();
+    expect(locks.size).toBe(4);
+    expect(locks.docs.every((lock) => lock.data().bookingId === replacement.bookings[0]!.id)).toBe(true);
+    expect((await col(C.bookings).doc(original.bookings[0]!.id).get()).data()?.status).toBe("cancelled");
+  });
+
+  it("rejects a late check-in after a replacement has taken the seat locks", async () => {
+    const now = new Date("2030-01-07T05:25:00Z");
+    const original = await holdBundle({ userId: "a", projectId: "pa", placements: [place()], idempotencyKey: randomUUID(), now });
+    await setBookingStatus([original.bookings[0]!.id], "confirmed", {}, now);
+    const later = new Date("2030-01-07T05:46:00Z");
+    const replacement = await holdBundle({ userId: "b", projectId: "pb", placements: [place()], idempotencyKey: randomUUID(), now: later });
+
+    await expect(setBookingStatus([original.bookings[0]!.id], "checked_in", { checkedInAt: later.toISOString() }, later)).rejects.toMatchObject({ status: 409 });
+
+    const locks = await col(C.slotLocks).get();
+    expect(locks.size).toBe(4);
+    expect(locks.docs.every((lock) => lock.data().bookingId === replacement.bookings[0]!.id)).toBe(true);
+    expect((await col(C.bookings).doc(original.bookings[0]!.id).get()).data()?.status).toBe("confirmed");
   });
 
   it("repeating a request with the same idempotency key creates one booking", async () => {
