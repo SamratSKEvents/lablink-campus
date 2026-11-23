@@ -69,6 +69,8 @@ export function resolveConflict(
   id = `dec-${eq.id}-${start.toISOString()}`,
 ): Decision {
   const candidates: DecisionCandidate[] = contenders.map((c) => {
+    if (end > new Date(c.project.deadline))
+      return { userId: c.user.id, projectId: c.project.id, eligible: false, filteredBy: "This slot ends after your deadline, so it can't help this project." };
     const r = checkSlot(ctx, { user: c.user, equipment: eq, start, end });
     if (!r.ok) return { userId: c.user.id, projectId: c.project.id, eligible: false, filteredBy: r.reason };
     return { userId: c.user.id, projectId: c.project.id, eligible: true, scores: scoreContender(ctx, c, eq) };

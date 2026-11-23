@@ -56,6 +56,13 @@ describe("Layer 3 fairness", () => {
     expect(d.explanation).toMatch(/Priya/);
   });
 
+  it("a slot after a contender's deadline can't help them, so they're filtered with a reason", () => {
+    const late = contender({ project: project({ deadline: ist(0, 12).toISOString() }) });
+    const d = resolveConflict(ctx(), unit(), ist(0, 14), ist(0, 15), [late]);
+    expect(d.candidates[0]).toMatchObject({ eligible: false });
+    expect(d.winnerUserId).toBeNull();
+  });
+
   it("is deterministic on ties (user id order)", () => {
     const c = ctx();
     const a = contender({ user: user({ id: "u-a", name: "A" }) });

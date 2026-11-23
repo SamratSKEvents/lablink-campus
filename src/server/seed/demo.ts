@@ -291,6 +291,22 @@ export function buildDemo(now = new Date()) {
     book(`b-past-${d}c`, "u-s3", "p-riscv", "synth", "eq-fpga-25", at(-d, 11), 120, d % 3 === 0 ? "no_show" : "completed");
     book(`b-past-${d}d`, "u-s9", "p-finals-2", "scope", "eq-oscilloscope-2", at(-d, 9), 60, "completed");
   }
+  // A realistic week of history: most units see regular use, oscilloscopes and printers are
+  // in high demand, and the Physics teaching kits plus the CNC mills sit idle (Opportunity Radar).
+  const idle = new Set(["lab-phys-2"]);
+  const students = users.filter((u) => u.role === "student").map((u) => u.id);
+  equipment.forEach((e, i) => {
+    if (idle.has(e.labId) || e.classId === "cnc-mill" || e.status !== "available") return;
+    const hot = e.classId === "oscilloscope" || e.classId === "3d-printer";
+    const perDay = hot ? 2 : 1 + (i % 2);
+    for (let d = 1; d <= 6; d++)
+      for (let k = 0; k < perDay; k++) {
+        if (!hot && (i + d) % 3 === 0) continue;
+        const who = students[(i * 7 + d * 3 + k) % students.length]!;
+        const status = (i + d + k) % 9 === 0 ? "no_show" : "completed";
+        book(`b-hist-${e.id}-${d}-${k}`, who, "p-history", "use", e.id, at(-d, 9 + k * 3), 120, status);
+      }
+  });
   const usageEvents = bookings
     .filter((b) => b.status === "completed" || b.status === "no_show")
     .map((b) => {

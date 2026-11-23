@@ -150,10 +150,10 @@ allocationRouter.post(
     const scope = ctx.equipment.find((e) => e.id === "eq-scope-1") ?? ctx.equipment.find((e) => e.classId === "oscilloscope");
     if (!scope) throw new HttpError(404, "No oscilloscope in the catalogue.", "not_found");
     const lab = ctx.labs.find((l) => l.id === scope.labId)!;
-    // The first free 2-hour window from tomorrow 2 pm IST, inside staffed hours.
+    // The first free 2-hour window tomorrow, inside staffed hours.
     const tomorrow = addMinutes(ctx.now, 1440);
     const dayStartUtc = new Date(Math.floor((tomorrow.getTime() + 330 * 60_000) / 86_400_000) * 86_400_000 - 330 * 60_000);
-    let start = addMinutes(dayStartUtc, Math.max(14 * 60, lab.staffedFromMin));
+    let start = addMinutes(dayStartUtc, lab.staffedFromMin);
     for (let i = 0; i < 96 && freeSeat(ctx, scope, start, addMinutes(start, 120)) < 0; i++) {
       start = addMinutes(start, 15);
       if ((Math.floor(start.getTime() / 60_000) + 330) % 1440 + 120 > lab.staffedToMin) start = addMinutes(dayStartUtc, 1440 + lab.staffedFromMin);
