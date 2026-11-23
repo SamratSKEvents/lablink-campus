@@ -1,0 +1,87 @@
+/*
+ * LabLink design tokens: "playful, focused, minimal".
+ * A white canvas with warm stone neutrals and vibrant accents.
+ * Each accent has a semantic job, so colour always means the same thing:
+ *   green  = available / success      yellow = attention / held / highlight
+ *   orange = booked / at risk         red    = danger / SOS / out of service
+ *   blue   = AI (Gemini)              violet = fairness / decisions
+ * Each accent has 3 steps: tint (backgrounds), base (fills), ink (text on white, WCAG AA ≥ 4.5:1).
+ * Text on a base fill is always --ink-900 (dark), never white, so it stays readable.
+ * Rule: no eyebrow labels (small uppercase captions above headings). The heading carries the meaning on its own.
+ */
+:root {
+  /* Canvas and neutrals (warm stone) */
+  --bg-page: #ffffff;
+  --bg-subtle: #f6f5f3;
+  --bg-subtle-hover: #eeece9;
+  --bg-muted: #e2dfdb;
+  --ink-900: #0c0a09;
+  --ink-600: #5f5a53; /* secondary text, 6.6:1 on white */
+  --ink-400: #a39d95; /* decorative or disabled only, never body text */
+  --line: #eeece9;
+  --line-strong: #e2dfdb;
+
+  /* Vibrant accents */
+  --green-tint: #e6f9ef;  --green: #2fcf8a;  --green-ink: #0b7a48;
+  --yellow-tint: #fff7d6; --yellow: #ffd54a; --yellow-ink: #8a6200;
+  --orange-tint: #fff0e5; --orange: #ff8a3d; --orange-ink: #b4480c;
+  --red-tint: #ffeaea;    --red: #ff4d4f;    --red-ink: #c4161f;
+  --blue-tint: #e8f0ff;   --blue: #4c8dff;   --blue-ink: #1f5fd6;
+  --violet-tint: #f0ebff; --violet: #8b6cff; --violet-ink: #5f35d9;
+
+  /* Semantic aliases */
+  --status-free: var(--green);
+  --status-held: var(--yellow);
+  --status-booked: var(--orange);
+  --status-blocked: var(--red);
+  --ai: var(--blue);
+  --fair: var(--violet);
+  --focus-ring: 0 0 0 3px var(--bg-page), 0 0 0 5px var(--blue-ink);
+
+  /* Typography */
+  --font-display: "Cal Sans", system-ui, sans-serif; /* single weight (400): it is a display face, so never use synthetic bold */
+  --font-ui: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-hand: "Caveat", "Bradley Hand", cursive;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --text-hero: clamp(2rem, 4.5vw, 4rem);
+  --text-h2: clamp(1.5rem, 2.6vw, 2.25rem);
+  --text-h3: 1.25rem;
+  --text-body: 1rem;
+  --text-small: 0.875rem;
+  --text-meta: 0.75rem;
+
+  /* Shape */
+  --radius-xs: 8px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-pill: 9999px;
+
+  /* Depth: hairline rings + soft, long shadows */
+  --ring-hairline: 0 0 0 0.5px rgba(0, 0, 0, 0.12), 0 1px 1px rgba(0, 0, 0, 0.04);
+  --ring-inset: inset 0 0 0 1px var(--line);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 12px 32px -8px rgba(0, 0, 0, 0.08), var(--ring-inset);
+  --shadow-float: 0 1px 2px rgba(0, 0, 0, 0.05), 0 28px 56px -28px rgba(0, 0, 0, 0.28);
+
+  /* Motion (see DESIGN.md §Motion). Enter with ease-out, exit with ease-in, move with ease-in-out. Closing is faster than opening. */
+  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-exit: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-move: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-colour: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* small overshoot: press feedback, playful pops */
+  --dur-press: 120ms;   /* hover/press feedback 100–150 */
+  --dur-fast: 150ms;    /* exits, chips, colour */
+  --dur-base: 250ms;    /* most transitions, entries */
+  --dur-panel: 380ms;   /* sheets, full panels (max ~400) */
+  --stagger: 40ms;      /* list cascade step; cap the cascade at ~8 items */
+
+  /* Spacing (4px base) */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-6: 24px; --space-8: 32px; --space-12: 48px; --space-16: 64px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-press: 0ms; --dur-fast: 0ms; --dur-base: 0ms; --dur-panel: 0ms; --stagger: 0ms; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

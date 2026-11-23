@@ -1,0 +1,38 @@
+# Dependencies & builds
+node_modules/
+dist/
+build/
+coverage/
+.vite/
+*.tsbuildinfo
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+service-account*.json
+*-firebase-adminsdk-*.json
+
+# Firebase / emulators
+.firebase/
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+emulator-data/
+
+# Logs & OS
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# Editor / tooling
+.vscode/
+.idea/
+.impeccable/
+
+# Private planning & design docs (kept local, not submitted)
+LABLINK-MASTER-PLAN.md
+DESIGN.md
+docs/superpowers/
+design/preview.html
