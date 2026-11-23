@@ -263,6 +263,7 @@ export function PinDialog({
             id={id}
             className={`input mono !text-2xl tracking-[0.5em] text-center ${shakeKey ? "shake" : ""}`}
             inputMode="numeric"
+            autoFocus
             autoComplete="off"
             pattern="\d{4}"
             maxLength={4}
@@ -309,7 +310,7 @@ function ToastList() {
       style={{ boxShadow: "var(--shadow-float)" }}
     >
       <div className="flex-1">
-        <Toast.Title className="font-semibold" />
+        <Toast.Title className="!font-sans !text-base font-semibold !leading-snug" />
         <Toast.Description className="meta" />
       </div>
       <Toast.Close className="btn btn-soft !p-0 !w-9 !h-9 !min-h-9" aria-label="Dismiss">

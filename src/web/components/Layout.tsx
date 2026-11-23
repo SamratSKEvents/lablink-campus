@@ -133,7 +133,7 @@ function Shell({
             <Notifications />
             <button type="button" className="btn-ghost" onClick={signOut} aria-label={`Sign out ${name}`}>
               <LogOut size={18} aria-hidden="true" />
-              <span className="hidden lg:inline">{name.split(" ")[0]}</span>
+              <span className="hidden lg:inline">{name.replace(/^(Dr|Prof)\.\s*/, "").split(" ")[0]}</span>
             </button>
             {role !== "security" && (
               <span className="ml-1.5">

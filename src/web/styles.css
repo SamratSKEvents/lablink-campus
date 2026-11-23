@@ -685,3 +685,9 @@
     stroke-dashoffset: 0;
   }
 }
+
+/* The skip-link target takes focus programmatically; it should not draw a ring around the page. */
+main:focus,
+main:focus-visible {
+  box-shadow: none;
+}

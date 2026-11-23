@@ -23,11 +23,24 @@ approvalsRouter.get(
       pending.map(async (r) => {
         const project = await mustGet<Project>(C.projects, r.projectId, "Project");
         const owner = await mustGet<StoredUser>(C.users, r.ownerId, "Student");
-        const copilot = await approvalCopilot(project, publicUser(owner), r.safetyLevel);
-        return { request: r, project, owner: publicUser(owner), copilot: copilot.data, copilotSource: copilot.source };
+        return { request: r, project, owner: publicUser(owner) };
       }),
     );
     res.json({ items: items.sort((a, b) => a.project.deadline.localeCompare(b.project.deadline)) });
+  }),
+);
+
+/** Copilot notes load per card, so the queue shows instantly while Gemini reads each request. */
+approvalsRouter.get(
+  "/approvals/:requestId/copilot",
+  requireAuth(["faculty", "admin"]),
+  handle<AuthedRequest>(async (req, res) => {
+    const r = await mustGet<AccessRequest>(C.requests, String(req.params.requestId), "Request");
+    if (req.actor.role !== "admin" && r.departmentId !== req.actor.departmentId) throw forbidden();
+    const project = await mustGet<Project>(C.projects, r.projectId, "Project");
+    const owner = await mustGet<StoredUser>(C.users, r.ownerId, "Student");
+    const copilot = await approvalCopilot(project, publicUser(owner), r.safetyLevel);
+    res.json({ copilot: copilot.data, source: copilot.source });
   }),
 );
 

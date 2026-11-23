@@ -10,14 +10,17 @@ import { classLabel } from "@shared/catalogue";
 import { formatDay } from "@shared/time";
 import { api, post } from "../../lib/api";
 import type { Project, User } from "../../lib/types";
-import { AiNote, Chip, Empty, ErrorNote, Loading, PageHeader, PinDialog, useToast } from "../../components/ui";
+import { AiNote, Chip, Empty, ErrorNote, Loading, PageHeader, PinDialog, Spinner, useToast } from "../../components/ui";
 
 interface Item {
   request: { id: string; safetyLevel: string; reviewRequired: boolean; createdAt: string };
   project: Project;
   owner: User;
+}
+
+interface Copilot {
   copilot: { summary: string; riskFlags: string[]; suggestion: "approve" | "approve_with_conditions" | "needs_discussion"; conditions?: string[] };
-  copilotSource: string;
+  source: string;
 }
 
 const SUGGESTION = { approve: "Suggests approving", approve_with_conditions: "Suggests approving with conditions", needs_discussion: "Suggests a conversation first" } as const;
@@ -42,7 +45,8 @@ export default function Approvals() {
 }
 
 function ApprovalCard({ item }: { item: Item }) {
-  const { project: p, owner, copilot, request } = item;
+  const { project: p, owner, request } = item;
+  const cq = useQuery({ queryKey: ["copilot", request.id], queryFn: () => api<Copilot>(`/approvals/${request.id}/copilot`), staleTime: 5 * 60_000 });
   const [mode, setMode] = useState<"approve" | "reject" | null>(null);
   const [verify, setVerify] = useState(true);
   const [reason, setReason] = useState("");
@@ -65,14 +69,20 @@ function ApprovalCard({ item }: { item: Item }) {
           <Chip tone={request.safetyLevel === "high" ? "red" : request.safetyLevel === "medium" ? "yellow" : "green"}>{request.safetyLevel} hazard</Chip>
         </div>
       </div>
-      <AiNote source={item.copilotSource} label="Copilot">
-        {copilot.summary} <b className="!text-ink">{SUGGESTION[copilot.suggestion]}.</b>
-        {copilot.riskFlags.length > 0 && (
-          <ul className="list-disc pl-5 mt-2">
-            {copilot.riskFlags.map((f) => <li key={f}>{f}</li>)}
-          </ul>
-        )}
-      </AiNote>
+      {cq.data ? (
+        <AiNote source={cq.data.source} label="Copilot">
+          {cq.data.copilot.summary} <b className="!text-ink">{SUGGESTION[cq.data.copilot.suggestion]}.</b>
+          {cq.data.copilot.riskFlags.length > 0 && (
+            <ul className="list-disc pl-5 mt-2">
+              {cq.data.copilot.riskFlags.map((f) => <li key={f}>{f}</li>)}
+            </ul>
+          )}
+        </AiNote>
+      ) : (
+        <p className="ai-bubble inline-flex items-center gap-2 text-blue-ink" role="status">
+          <Spinner /> Copilot is reading this request…
+        </p>
+      )}
       <ol className="flex flex-wrap gap-2" aria-label="Lab steps">
         {p.tasks.map((t, i) => (
           <li key={t.id}><Chip tone="neutral" dot={false}>{i + 1}. {t.name} · {classLabel(t.classId)}</Chip></li>
