@@ -3,7 +3,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist/web",
   "regions": ["bom1"],
-  "functions": { "api/index.js": { "maxDuration": 30, "includeFiles": "dist/server/**" } },
+  "functions": { "api/index.js": { "maxDuration": 30, "includeFiles": "dist/api/**" } },
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api" },
     { "source": "/health", "destination": "/api" },

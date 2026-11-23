@@ -37,3 +37,6 @@ DESIGN.md
 docs/superpowers/
 design/preview.html
 ILLUSTRATION-PROMPTS.md
+
+.vercel
+.env*
