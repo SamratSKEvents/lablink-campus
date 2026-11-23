@@ -7,6 +7,7 @@ import { Loading } from "./components/ui";
 import { useSession } from "./lib/auth";
 
 const SignIn = lazy(() => import("./features/auth/SignIn"));
+const LandingPage = lazy(() => import("./features/auth/Landing"));
 const ProjectsHome = lazy(() => import("./features/projects/ProjectsHome"));
 const NewProject = lazy(() => import("./features/projects/NewProject"));
 const ProjectPage = lazy(() => import("./features/projects/ProjectPage"));
@@ -33,20 +34,17 @@ function Page({ children }: { children: ReactNode }) {
 function Guard({ roles, children }: { roles?: Role[]; children: ReactNode }) {
   const { user, ready } = useSession();
   if (!ready) return <Loading label="Checking your session" />;
-  if (!user) return <Navigate to="/" replace />;
+  if (!user) return <Navigate to="/demo" replace />;
   if (roles && !roles.includes(user.role)) return <Navigate to={homeFor(user.role)} replace />;
   return <Page>{children}</Page>;
 }
 
-function Landing() {
+/** Public pages: signed-in users go straight to their home. */
+function Public({ children }: { children: ReactNode }) {
   const { user, ready } = useSession();
   if (!ready) return null;
   if (user) return <Navigate to={homeFor(user.role)} replace />;
-  return (
-    <Page>
-      <SignIn />
-    </Page>
-  );
+  return <Page>{children}</Page>;
 }
 
 function RouteError() {
@@ -66,7 +64,8 @@ const S: Role[] = ["student"];
 const STAFF: Role[] = ["faculty", "technician", "admin"];
 
 export const router = createBrowserRouter([
-  { path: "/", element: <Landing />, errorElement: <RouteError /> },
+  { path: "/", element: <Public><LandingPage /></Public>, errorElement: <RouteError /> },
+  { path: "/demo", element: <Public><SignIn /></Public>, errorElement: <RouteError /> },
   {
     element: <Layout />,
     errorElement: <RouteError />,
