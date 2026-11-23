@@ -59,7 +59,7 @@ const NAV: Record<Role, NavItem[]> = {
   security: [{ to: "/incidents", label: "Incidents", short: "Alerts", icon: Siren }],
 };
 
-export function Logo() {
+export function Logo({ compact = false }: { compact?: boolean }) {
   return (
     <span className="inline-flex items-center gap-2 font-display text-xl leading-none" aria-label="LabLink">
       <svg width="28" height="28" viewBox="0 0 64 64" aria-hidden="true" className="shrink-0">
@@ -68,7 +68,45 @@ export function Logo() {
         <circle cx="46" cy="20" r="6" fill="var(--green)" />
       </svg>
       {/* Cal Sans sits slightly low in its line box; nudge it onto the icon's centre line. */}
-      <span className="relative -top-px">LabLink</span>
+      <span className={`relative -top-px ${compact ? "hidden sm:inline" : ""}`}>LabLink</span>
+    </span>
+  );
+}
+
+const ROLE_BADGE: Record<Role, { label: string; tone: string }> = {
+  student: { label: "Student", tone: "tone-yellow" },
+  faculty: { label: "Faculty", tone: "tone-violet" },
+  technician: { label: "Technician", tone: "tone-green" },
+  admin: { label: "Admin", tone: "tone-orange" },
+  security: { label: "Security", tone: "tone-red" },
+};
+
+/** Who is signed in, at a glance: initials plus role, colour-coded per role. */
+function RoleBadge({ name, role, kiosk }: { name: string; role: Role; kiosk: boolean }) {
+  const b = ROLE_BADGE[role];
+  const plain = name.replace(/^(Dr|Prof)\.\s*/, "");
+  const initials = plain
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+  return (
+    <span
+      className={`chip ${b.tone} !py-1 !pl-1 !pr-3 !gap-2`}
+      title={`${name} · ${b.label}${kiosk ? " · kiosk" : ""}`}
+    >
+      <span
+        className="w-7 h-7 rounded-full bg-white/80 grid place-items-center text-[0.7rem] font-bold text-ink"
+        aria-hidden="true"
+      >
+        {initials}
+      </span>
+      <span>
+        <span className="sr-only">Signed in as {name}, </span>
+        {b.label}
+        {kiosk && <span className="sr-only"> (kiosk)</span>}
+      </span>
     </span>
   );
 }
@@ -99,7 +137,8 @@ function Shell({
 }) {
   // Background polls (notifications, live maps) shouldn't flash the loading bar.
   const POLLS = ["notifications", "labs", "incidents", "my-bookings"];
-  const busy = useIsFetching({ predicate: (q) => !POLLS.includes(String(q.queryKey[0])) }) + useIsMutating() > 0;
+  const busy =
+    useIsFetching({ predicate: (q) => !POLLS.includes(String(q.queryKey[0])) }) + useIsMutating() > 0;
   return (
     <div className="min-h-dvh">
       <a href="#main" className="skip-link btn btn-primary">
@@ -109,9 +148,12 @@ function Shell({
       <header className="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-line">
         {busy && <div className="topbar" role="progressbar" aria-label="Loading" />}
         <div className="max-w-6xl mx-auto px-4 h-16 md:h-[72px] flex items-center gap-3 md:gap-8">
-          <NavLink to="/" className="shrink-0 rounded-lg flex items-center h-11">
-            <Logo />
-          </NavLink>
+          <div className="flex items-center gap-2.5 shrink-0">
+            <NavLink to="/" className="rounded-lg flex items-center h-11">
+              <Logo compact />
+            </NavLink>
+            <RoleBadge name={name} role={role} kiosk={kiosk} />
+          </div>
           <nav aria-label="Main" className="hidden md:block flex-1 overflow-x-auto">
             <ul className="flex gap-1">
               {links.map((l) => (
@@ -129,11 +171,20 @@ function Shell({
             </ul>
           </nav>
           <div className="flex items-center gap-0.5 ml-auto md:ml-0 shrink-0">
-            {!kiosk && <JudgeTour />}
+            {!kiosk && (
+              <span className="hidden sm:inline-flex">
+                <JudgeTour />
+              </span>
+            )}
             <Notifications />
-            <button type="button" className="btn-ghost" onClick={signOut} aria-label={`Sign out ${name}`}>
+            <button
+              type="button"
+              className="btn-ghost"
+              onClick={signOut}
+              aria-label={`Sign out ${name}`}
+              title="Sign out"
+            >
               <LogOut size={18} aria-hidden="true" />
-              <span className="hidden lg:inline">{name.replace(/^(Dr|Prof)\.\s*/, "").split(" ")[0]}</span>
             </button>
             {role !== "security" && (
               <span className="ml-1.5">
@@ -142,20 +193,38 @@ function Shell({
             )}
           </div>
         </div>
-        {kiosk && <p className="text-center text-sm bg-yellow-tint text-yellow-ink py-1">Kiosk session: signs out after 2 minutes idle.</p>}
+        {kiosk && (
+          <p className="text-center text-sm bg-yellow-tint text-yellow-ink py-1">
+            Kiosk session: signs out after 2 minutes idle.
+          </p>
+        )}
       </header>
-      <main id="main" tabIndex={-1} className="max-w-6xl mx-auto px-4 pt-6 md:pt-10 pb-32 md:pb-24 outline-none">
+      <main
+        id="main"
+        tabIndex={-1}
+        className="max-w-6xl mx-auto px-4 pt-6 md:pt-10 pb-32 md:pb-24 outline-none"
+      >
         <Outlet />
       </main>
       {/* Phones: a thumb-reachable tab bar, like a native app. */}
-      <nav aria-label="Main" className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur border-t border-line pb-[env(safe-area-inset-bottom)]">
+      <nav
+        aria-label="Main"
+        className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur border-t border-line pb-[env(safe-area-inset-bottom)]"
+      >
         <ul className="flex">
           {links.map((l) => (
             <li key={l.to} className="flex-1">
-              <NavLink to={l.to} className={({ isActive }) => `flex flex-col items-center justify-center gap-1 min-h-16 text-xs font-semibold ${isActive ? "text-ink" : "text-ink-2"}`}>
+              <NavLink
+                to={l.to}
+                className={({ isActive }) =>
+                  `flex flex-col items-center justify-center gap-1 min-h-16 text-xs font-semibold ${isActive ? "text-ink" : "text-ink-2"}`
+                }
+              >
                 {({ isActive }) => (
                   <>
-                    <span className={`grid place-items-center w-12 h-7 rounded-full transition-colors duration-[var(--dur-fast)] ${isActive ? "bg-yellow" : ""}`}>
+                    <span
+                      className={`grid place-items-center w-12 h-7 rounded-full transition-colors duration-[var(--dur-fast)] ${isActive ? "bg-yellow" : ""}`}
+                    >
                       <l.icon size={20} aria-hidden="true" />
                     </span>
                     {l.short}
@@ -181,7 +250,11 @@ interface Note {
 
 function Notifications() {
   const qc = useQueryClient();
-  const { data } = useQuery({ queryKey: ["notifications"], queryFn: () => api<{ items: Note[] }>("/notifications"), refetchInterval: 15_000 });
+  const { data } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: () => api<{ items: Note[] }>("/notifications"),
+    refetchInterval: 15_000,
+  });
   const items = data?.items ?? [];
   const unread = items.filter((n) => !n.read);
   const markRead = async () => {
@@ -194,7 +267,10 @@ function Notifications() {
       <Popover.Trigger className="btn-ghost relative" aria-label={`Notifications, ${unread.length} unread`}>
         <Bell size={18} aria-hidden="true" />
         {unread.length > 0 && (
-          <span className="absolute top-1 right-1 min-w-5 h-5 px-1 rounded-full bg-red-ink text-white text-xs grid place-items-center" aria-hidden="true">
+          <span
+            className="absolute top-1 right-1 min-w-5 h-5 px-1 rounded-full bg-red-ink text-white text-xs grid place-items-center"
+            aria-hidden="true"
+          >
             {unread.length}
           </span>
         )}
@@ -212,12 +288,23 @@ function Notifications() {
               <ul className="grid">
                 {items.map((n) => (
                   <li key={n.id}>
-                    <Link to={n.link ?? "#"} className={`block px-3 py-2.5 rounded-xl hover:bg-subtle ${n.read ? "text-ink-2" : ""}`}>
-                      <span className={`chip tone-${n.kind === "alert" ? "red" : n.kind === "warning" ? "orange" : n.kind === "success" ? "green" : "neutral"} !p-0 !bg-transparent mr-1`}>
+                    <Link
+                      to={n.link ?? "#"}
+                      className={`block px-3 py-2.5 rounded-xl hover:bg-subtle ${n.read ? "text-ink-2" : ""}`}
+                    >
+                      <span
+                        className={`chip tone-${n.kind === "alert" ? "red" : n.kind === "warning" ? "orange" : n.kind === "success" ? "green" : "neutral"} !p-0 !bg-transparent mr-1`}
+                      >
                         <span className="dot" aria-hidden="true" />
                       </span>
                       <span className="text-sm">{n.text}</span>
-                      <span className="block meta text-xs mt-0.5">{new Date(n.at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" })}</span>
+                      <span className="block meta text-xs mt-0.5">
+                        {new Date(n.at).toLocaleString("en-IN", {
+                          timeZone: "Asia/Kolkata",
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
+                      </span>
                     </Link>
                   </li>
                 ))}
