@@ -181,11 +181,13 @@ export async function explainerSteps(eq: Equipment, goal: string, controls: stri
 
 /* ------------------------------ Hazard check ----------------------------- */
 
+/** Lenient on length (extra items are trimmed, not rejected): more caution is never a reason to fail. */
+const list = (n: number, len: number) => z.array(z.string().transform((x) => x.slice(0, len))).transform((xs) => xs.slice(0, n));
 const hazardSchema = z.object({
   level: z.enum(HAZARD_LEVELS),
-  hazards: z.array(z.string().max(160)).max(6),
-  precautions: z.array(z.string().max(160)).max(6),
-  ppe: z.array(z.string().max(60)).max(5),
+  hazards: list(8, 240),
+  precautions: list(8, 240),
+  ppe: list(6, 80),
   reviewRequired: z.boolean(),
 });
 

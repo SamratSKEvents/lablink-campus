@@ -52,7 +52,7 @@ function strip(node: unknown): unknown {
 
 /** JSON Schema for the model: structure only, so it stays within serving limits. */
 function modelSchema(schema: z.ZodType): Record<string, unknown> {
-  return strip(z.toJSONSchema(schema, { target: "draft-7", unrepresentable: "any" })) as Record<string, unknown>;
+  return strip(z.toJSONSchema(schema, { target: "draft-7", unrepresentable: "any", io: "input" })) as Record<string, unknown>;
 }
 
 function parseJson(text: string | undefined): unknown {
@@ -134,9 +134,20 @@ export async function generate<T>(o: GenerateOptions<T>): Promise<AiResult<T>> {
       if (config().GEMINI_API_KEY) attempts.push(["gemini", () => callGemini(o as GenerateOptions<unknown>, timeoutMs)]);
       if (config().GROQ_API_KEY) attempts.push(["groq", () => callGroq(o as GenerateOptions<unknown>, timeoutMs)]);
     }
+    // One quick retry for transient network/overload errors before moving to the next provider.
+    const transient = (e: unknown) => e instanceof Error && /fetch failed|ECONNRESET|UND_ERR|"code":503|overloaded|high demand/i.test(e.message);
+    const withRetry = async (run: () => Promise<unknown>) => {
+      try {
+        return await run();
+      } catch (e) {
+        if (!transient(e)) throw e;
+        await new Promise((r) => setTimeout(r, 600));
+        return run();
+      }
+    };
     for (const [source, run] of attempts) {
       try {
-        const parsed = o.schema.safeParse(await run());
+        const parsed = o.schema.safeParse(await withRetry(run));
         if (parsed.success) {
           const result = { data: parsed.data, source };
           log.info("ai", { task: o.task, source, ms: Date.now() - started });

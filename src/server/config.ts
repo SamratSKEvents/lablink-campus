@@ -14,7 +14,7 @@ const schema = z.object({
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().default("gemini-3.5-flash"),
   GROQ_API_KEY: z.string().optional(),
-  GROQ_MODEL: z.string().default("llama-3.3-70b-versatile"),
+  GROQ_MODEL: z.string().default("openai/gpt-oss-120b"),
   AI_DISABLED: z.enum(["0", "1"]).default("0"),
   /** Comma-separated origins allowed for CORS (same-origin needs nothing). */
   ALLOWED_ORIGINS: z.string().default(""),
