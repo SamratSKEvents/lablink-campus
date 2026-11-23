@@ -9,6 +9,7 @@ import { api } from "../../lib/api";
 import type { EquipmentItem } from "../../lib/types";
 import { AiNote, Chip, Empty, ErrorNote, Loading, LIVE_STATUS, PageHeader } from "../../components/ui";
 import { ClassIcon } from "./ClassIcon";
+import { Squiggle } from "../../components/Doodles";
 
 interface SearchResponse {
   items: EquipmentItem[];
@@ -29,7 +30,7 @@ export default function Discover() {
 
   return (
     <>
-      <PageHeader title="Find equipment" lead="Search every department's labs in plain words: “accessible oscilloscope free now”, “something to cut acrylic”." />
+      <PageHeader title={<>Find <Squiggle color="var(--green)">equipment</Squiggle></>} note="↘ every department, one search" doodles="tube" lead="Search every department's labs in plain words: “accessible oscilloscope free now”, “something to cut acrylic”." />
       <form
         role="search"
         className="flex gap-2 bg-white p-1.5 rounded-full mb-6"
@@ -55,28 +56,26 @@ export default function Discover() {
         </div>
       )}
       <ErrorNote error={error} />
-      {isLoading && <Loading label="Searching" />}
+      {isLoading && <Loading label="Searching every lab" />}
       {data && data.items.length === 0 && <Empty title="Nothing matched">Try fewer words, or a type of equipment.</Empty>}
-      <ul className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-3 ${isFetching ? "opacity-70" : ""} transition-opacity`} aria-live="polite">
+      <ul className={`rows ${isFetching ? "opacity-60" : ""} transition-opacity duration-[var(--dur-fast)]`} aria-live="polite" aria-busy={isFetching}>
         {data?.items.map((e) => {
           const st = LIVE_STATUS[e.liveStatus]!;
           return (
             <li key={e.id}>
-              <Link to={`/equipment/${e.id}`} className="card card-lift block h-full !p-5">
-                <div className="flex justify-between items-start gap-3">
-                  <ClassIcon classId={e.classId} />
-                  <Chip tone={st.tone}>{e.liveStatus === "free" ? st.label : e.nextFree ? `${st.label} · free ${formatDay(e.nextFree)} ${formatTime(e.nextFree)}` : st.label}</Chip>
+              <Link to={`/equipment/${e.id}`} className="group flex flex-wrap sm:flex-nowrap items-center gap-4 py-4 px-2 -mx-2 rounded-2xl hover:bg-subtle transition-colors duration-[var(--dur-fast)]">
+                <ClassIcon classId={e.classId} />
+                <div className="flex-1 min-w-48">
+                  <p className="font-semibold group-hover:underline underline-offset-4">{e.name}</p>
+                  <p className="meta">
+                    {e.classLabel} · {e.model} · {e.lab}, bench {e.bench}
+                  </p>
                 </div>
-                <h2 className="!text-lg mt-3">{e.name}</h2>
-                <p className="meta">
-                  {e.classLabel} · {e.model}
-                  <br />
-                  {e.lab}, bench {e.bench}
-                </p>
-                <div className="flex flex-wrap gap-2 mt-3">
+                <div className="flex flex-wrap gap-2 sm:justify-end">
                   {e.requiresCert && <Chip tone="violet" dot={false}>🎓 Certified only</Chip>}
                   {e.capacity > 1 && <Chip tone="neutral" dot={false}>Seats {e.capacity}</Chip>}
-                  {e.accessible && <Chip tone="neutral" dot={false}>♿ Accessible bench</Chip>}
+                  {e.accessible && <Chip tone="neutral" dot={false}>♿ Accessible</Chip>}
+                  <Chip tone={st.tone}>{e.liveStatus === "free" ? st.label : e.nextFree ? `${st.label} · free ${formatDay(e.nextFree)} ${formatTime(e.nextFree)}` : st.label}</Chip>
                 </div>
               </Link>
             </li>

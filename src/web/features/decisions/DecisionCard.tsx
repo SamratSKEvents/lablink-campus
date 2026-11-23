@@ -72,7 +72,7 @@ export function DecisionCard({ decision, names, equipmentName, highlightUserId }
               <div className="mt-3 grid gap-1">
                 <p className="text-sm font-semibold">Offered instead</p>
                 {decision.alternatives[c.userId]!.map((a) => (
-                  <p key={`${a.kind}-${a.start}`} className="text-sm">• {a.note} {a.kind !== "shared" && <span className="meta">({formatRange(a.start, a.end)})</span>}</p>
+                  <p key={`${a.kind}-${a.equipmentId}-${a.start}`} className="text-sm">• {a.note} {a.kind !== "shared" && <span className="meta">({formatRange(a.start, a.end)})</span>}</p>
                 ))}
               </div>
             ) : null}

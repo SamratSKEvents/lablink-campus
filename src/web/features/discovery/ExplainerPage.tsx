@@ -33,7 +33,7 @@ export default function ExplainerPage() {
   const q = useQuery({ queryKey: ["explain", id, asked], queryFn: () => post<ExplainResponse>(`/equipment/${id}/explain`, { goal: asked }) });
   const done = useMutation({ mutationFn: () => post(`/tutorials/${q.data!.classId}`) });
 
-  if (q.isLoading) return <Loading label="Preparing the walkthrough" />;
+  if (q.isLoading) return <Loading label="Reading the manual" />;
   if (q.error || !q.data) return <ErrorNote error={q.error} />;
   const d = q.data;
   const current = d.steps[Math.min(step, d.steps.length - 1)]!;
@@ -70,7 +70,7 @@ export default function ExplainerPage() {
             </ul>
           )}
         </section>
-        <section className="card grid gap-4 content-start" aria-labelledby="steps">
+        <section className="grid gap-4 content-start" aria-labelledby="steps">
           <div className="flex items-center justify-between">
             <h2 id="steps" className="!text-xl">Step {step + 1} of {d.steps.length}</h2>
             <Chip tone="yellow">{label}</Chip>

@@ -7,6 +7,7 @@ import { api } from "../../lib/api";
 import { useSession } from "../../lib/auth";
 import type { ProjectRow } from "../../lib/types";
 import { Chip, Empty, ErrorNote, Loading, PageHeader, RISK, Segments, TASK_STATE } from "../../components/ui";
+import { Squiggle } from "../../components/Doodles";
 
 export default function ProjectsHome() {
   const { user } = useSession();
@@ -15,8 +16,10 @@ export default function ProjectsHome() {
   return (
     <>
       <PageHeader
-        title={student ? "My projects" : "Projects"}
-        lead={student ? "Each card answers one question: what's stopping this project right now?" : "Every project in your department, most urgent first."}
+        title={student ? <>My <Squiggle>projects</Squiggle></> : "Projects"}
+        note={student ? "↘ what's stopping you right now?" : undefined}
+        doodles="flask"
+        lead={student ? "One card per project. Green means booked, blue means planned, red means something needs you." : "Every project in your department, most urgent first."}
         action={
           student && (
             <Link to="/projects/new" className="btn btn-yellow">

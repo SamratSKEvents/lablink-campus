@@ -11,7 +11,7 @@ import { formatDay, formatRange, minutesBetween } from "@shared/time";
 import { api, post } from "../../lib/api";
 import { useSession } from "../../lib/auth";
 import type { Booking, Passport, Placement, Project } from "../../lib/types";
-import { Chip, ErrorNote, Loading, RISK, Segments, Skeleton, TASK_STATE, useToast } from "../../components/ui";
+import { Chip, ErrorNote, Loading, RISK, Segments, Skeleton, Spinner, TASK_STATE, useToast } from "../../components/ui";
 import { PartsList } from "./NewProject";
 import { SafetyCard } from "./SafetyCard";
 
@@ -43,7 +43,7 @@ export default function ProjectPage() {
   const hold = useMutation({ mutationFn: () => post<{ bookings: Booking[]; status: string }>(`/projects/${id}/hold`, { idempotencyKey: crypto.randomUUID() }), onSuccess: refresh });
   const confirm = useMutation({ mutationFn: () => post(`/projects/${id}/confirm`), onSuccess: () => (setCelebrate(true), refresh()) });
 
-  if (q.isLoading) return <Loading label="Loading project" />;
+  if (q.isLoading) return <Loading label="Opening the passport" />;
   if (q.error || !q.data) return <ErrorNote error={q.error} />;
   const { project: p, passport: pp, xray } = q.data;
   const risk = RISK[pp.risk]!;
@@ -64,9 +64,9 @@ export default function ProjectPage() {
         <button className="btn btn-primary" onClick={() => request.mutate()} disabled={request.isPending}>Request lab access</button>
       );
     } else if (pp.approval.status === "approved" && held.length) {
-      primary = <button className="btn btn-primary" onClick={() => confirm.mutate()} disabled={confirm.isPending}>{confirm.isPending ? "Confirming…" : `Confirm ${held.length} booking${held.length > 1 ? "s" : ""}`}</button>;
+      primary = <button className="btn btn-primary" onClick={() => confirm.mutate()} disabled={confirm.isPending}>{confirm.isPending ? <><Spinner /> Confirming…</> : `Confirm ${held.length} booking${held.length > 1 ? "s" : ""}`}</button>;
     } else if (pp.approval.status === "approved" && unbooked.some((t) => t.state === "planned")) {
-      primary = <button className="btn btn-primary" onClick={() => hold.mutate()} disabled={hold.isPending}>{hold.isPending ? "Holding slots…" : "Book my plan"}</button>;
+      primary = <button className="btn btn-primary" onClick={() => hold.mutate()} disabled={hold.isPending}>{hold.isPending ? <><Spinner /> Holding slots…</> : "Book my plan"}</button>;
     } else if (booked === pp.tasks.length) {
       primary = <Link className="btn btn-primary" to="/session">Open lab session</Link>;
     }
@@ -133,8 +133,8 @@ export default function ProjectPage() {
           {pp.preview.status === "partial" && <p className="meta mt-4">Some steps can't be placed yet. You can still book the rest now, and LabLink keeps the others on its radar.</p>}
         </section>
 
-        <div className="grid gap-6 content-start">
-          <section className="card grid gap-3" aria-labelledby="checks-title">
+        <div className="grid gap-6 content-start lg:pl-2">
+          <section className="grid gap-3" aria-labelledby="checks-title">
             <h2 id="checks-title" className="!text-xl">Checklist</h2>
             <CheckRow ok={pp.approval.status === "approved"} label={{ approved: "Faculty approved", pending: "Waiting for faculty approval", rejected: "Request needs changes", not_requested: "Not requested yet" }[pp.approval.status]} />
             {pp.prerequisites.map((pr) => (
@@ -143,7 +143,7 @@ export default function ProjectPage() {
             {pp.prerequisites.length === 0 && <CheckRow ok label="No certifications needed" />}
             <CheckRow ok={!needsAck} label={needsAck ? "Read the safety precautions" : "Safety precautions acknowledged"} />
           </section>
-          <section className="card grid gap-3" aria-labelledby="xray-title">
+          <section className="grid gap-3 pt-6 border-t border-line" aria-labelledby="xray-title">
             <h2 id="xray-title" className="!text-xl">Project X-Ray</h2>
             {xray.supported && p.parts.length ? (
               <Suspense fallback={<Skeleton className="h-64" />}>
@@ -192,7 +192,7 @@ function RescuePanel({ projectId, equipmentId, onDone }: { projectId: string; eq
         <h2 id="rescue-title" className="!text-2xl !text-ink">Rescue Mode</h2>
       </div>
       <p className="text-ink">{eq[equipmentId]?.name ?? "A unit"} you booked is out of service. Here's a recovery plan that still keeps your deadline.</p>
-      {q.isLoading && <Skeleton className="h-20" />}
+      {q.isLoading && <p className="meta">Working out a recovery plan…</p>}
       {q.data?.proposal === null && <p className="text-ink">Nothing in this project is affected any more.</p>}
       {q.data?.proposal && (
         <>

@@ -7,6 +7,7 @@ import { Toast } from "@base-ui/react/toast";
 import { Sparkles, X } from "lucide-react";
 import { useId, useState, type ReactNode } from "react";
 import { ApiError } from "../lib/api";
+import { HeaderDoodles, Spark, TestTube } from "./Doodles";
 
 export type Tone = "green" | "yellow" | "orange" | "red" | "blue" | "violet" | "neutral";
 
@@ -71,14 +72,31 @@ export function Skeleton({ className = "h-24" }: { className?: string }) {
   return <div className={`skeleton ${className}`} aria-hidden="true" />;
 }
 
-export function Loading({ label = "Loading" }: { label?: string }) {
+/** Bubbling flask: the app's loading state. Announced to screen readers. */
+export function FlaskLoader({ label = "Loading", size = 56 }: { label?: string; size?: number }) {
   return (
-    <div role="status" className="grid gap-3">
-      <span className="sr-only">{label}…</span>
-      <Skeleton className="h-28" />
-      <Skeleton className="h-28" />
+    <div role="status" className="grid place-items-center gap-3 py-16 enter">
+      <svg viewBox="0 0 64 80" width={size} height={size * 1.25} className="flask-loader" aria-hidden="true">
+        <g className="liquid">
+          <path d="M16 56 L26 38 h12 L48 56 Q50 66 40 66 H24 Q14 66 16 56Z" fill="var(--yellow)" />
+        </g>
+        <circle className="bubble" cx="28" cy="54" r="3" fill="#fff" stroke="var(--ink-900)" strokeWidth="1.5" />
+        <circle className="bubble b2" cx="36" cy="58" r="2.2" fill="#fff" stroke="var(--ink-900)" strokeWidth="1.5" />
+        <circle className="bubble b3" cx="32" cy="50" r="1.6" fill="#fff" stroke="var(--ink-900)" strokeWidth="1.5" />
+        <path d="M26 6 h12 M28 6 v26 L10 62 Q6 74 22 74 H42 Q58 74 54 62 L36 32 V6" fill="none" stroke="var(--ink-900)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      <p className="hand !text-xl">{label}…</p>
     </div>
   );
+}
+
+export function Loading({ label = "Loading" }: { label?: string }) {
+  return <FlaskLoader label={label} />;
+}
+
+/** Inline spinner for buttons that are working. */
+export function Spinner() {
+  return <span className="spinner" aria-hidden="true" />;
 }
 
 export function ErrorNote({ error }: { error: unknown }) {
@@ -94,22 +112,62 @@ export function ErrorNote({ error }: { error: unknown }) {
 
 export function Empty({ title, children }: { title: string; children?: ReactNode }) {
   return (
-    <div className="card text-center py-12">
-      <h3>{title}</h3>
+    <div className="text-center py-14 enter">
+      <div className="relative mx-auto w-16 h-20 mb-4" aria-hidden="true">
+        <TestTube className="bob !static w-8 mx-auto" fill="var(--yellow)" />
+        <Spark className="twinkle w-4" style={{ right: 0, top: 0 }} />
+      </div>
+      <h2 className="!text-2xl">{title}</h2>
       {children && <div className="meta mt-2">{children}</div>}
     </div>
   );
 }
 
-export function PageHeader({ title, lead, action }: { title: ReactNode; lead?: ReactNode; action?: ReactNode }) {
+/**
+ * Page header with the playful layer: an optional hand-written note, a doodle cluster,
+ * and (via <Squiggle>) one underlined word. Keep it to one loud thing per view.
+ */
+export function PageHeader({
+  title,
+  lead,
+  action,
+  note,
+  doodles = "flask",
+}: {
+  title: ReactNode;
+  lead?: ReactNode;
+  action?: ReactNode;
+  note?: string;
+  doodles?: "flask" | "tube" | "beaker" | "atom" | "none";
+}) {
   return (
-    <header className="flex flex-wrap items-end justify-between gap-4 mb-8">
-      <div>
-        <h1 className="!text-[clamp(1.75rem,3.5vw,2.75rem)]">{title}</h1>
-        {lead && <p className="meta mt-2 max-w-xl">{lead}</p>}
+    <header className="relative flex flex-wrap items-end justify-between gap-4 mb-10 pt-2">
+      {doodles !== "none" && <HeaderDoodles set={doodles} />}
+      <div className="relative">
+        {note && (
+          <span className="hand block -rotate-3 mb-1 !text-lg" aria-hidden="true">
+            {note}
+          </span>
+        )}
+        <h1 className="!text-[clamp(2rem,4vw,3.25rem)]">{title}</h1>
+        {lead && <p className="meta !text-base mt-3 max-w-xl">{lead}</p>}
       </div>
-      {action}
+      {action && <div className="relative">{action}</div>}
     </header>
+  );
+}
+
+/** Secondary content: a heading and a hairline separator instead of another card. */
+export function Section({ title, children, aside, id }: { title: ReactNode; children: ReactNode; aside?: ReactNode; id?: string }) {
+  const hid = useId();
+  return (
+    <section className="section" aria-labelledby={id ?? hid}>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h2 id={id ?? hid} className="!text-2xl">{title}</h2>
+        {aside}
+      </div>
+      {children}
+    </section>
   );
 }
 

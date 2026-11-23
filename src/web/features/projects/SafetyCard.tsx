@@ -14,12 +14,12 @@ export function SafetyCard({ safety, source, action }: { safety: Safety; source?
   const lvl = LEVEL[safety.level];
   const Icon = safety.level === "high" || safety.level === "medium" ? ShieldAlert : ShieldCheck;
   return (
-    <section className="card grid gap-4" aria-labelledby="safety-title">
+    <section className="section grid gap-4" aria-labelledby="safety-title">
       <div className="flex flex-wrap items-center gap-3">
         <span className={`appicon tone-${lvl.tone}`} aria-hidden="true">
           <Icon size={22} />
         </span>
-        <h3 id="safety-title" className="flex-1">Safety check</h3>
+        <h2 id="safety-title" className="flex-1 !text-2xl">Safety check</h2>
         <Chip tone={lvl.tone}>{lvl.label}</Chip>
         {safety.reviewRequired && <Chip tone="violet">Faculty safety review</Chip>}
       </div>

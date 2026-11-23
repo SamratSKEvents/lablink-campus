@@ -33,9 +33,9 @@ export default function Incidents() {
   const resolved = data?.items.filter((i) => i.status === "resolved") ?? [];
   return (
     <>
-      <PageHeader title="Incidents" lead="Live alerts from every lab you're responsible for. Updates every few seconds." />
+      <PageHeader title="Incidents" doodles="none" lead="Live alerts from every lab you're responsible for. Updates every few seconds." />
       <ErrorNote error={error} />
-      {isLoading && <Loading />}
+      {isLoading && <Loading label="Checking every lab" />}
       {data && active.length === 0 && <Empty title="No active incidents">Everyone's safe right now.</Empty>}
       <ul className="grid gap-4 mb-10" aria-live="polite">
         {active.map((i) => <IncidentCard key={i.id} incident={i} />)}

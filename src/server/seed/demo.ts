@@ -299,7 +299,7 @@ export function buildDemo(now = new Date()) {
     if (idle.has(e.labId) || e.classId === "cnc-mill" || e.status !== "available") return;
     const hot = e.classId === "oscilloscope" || e.classId === "3d-printer";
     const perDay = hot ? 2 : 1 + (i % 2);
-    for (let d = 1; d <= 6; d++)
+    for (let d = 1; d <= 7; d++)
       for (let k = 0; k < perDay; k++) {
         if (!hot && (i + d) % 3 === 0) continue;
         const who = students[(i * 7 + d * 3 + k) % students.length]!;

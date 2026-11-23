@@ -26,11 +26,11 @@ export default function Approvals() {
   const { data, isLoading, error } = useQuery({ queryKey: ["approvals"], queryFn: () => api<{ items: Item[] }>("/approvals") });
   return (
     <>
-      <PageHeader title="Approvals" lead="One request per project, covering every piece of equipment. Approval grants permission. Slots are checked again at booking." />
+      <PageHeader title="Approvals" note="↘ a person decides, always" doodles="tube" lead="One request per project, covering every piece of equipment. Approval grants permission. Slots are checked again at booking." />
       <ErrorNote error={error} />
-      {isLoading && <Loading />}
+      {isLoading && <Loading label="Gathering requests" />}
       {data?.items.length === 0 && <Empty title="All clear">No requests are waiting for you.</Empty>}
-      <ul className="grid gap-6 stagger">
+      <ul className="rows stagger">
         {data?.items.map((it) => (
           <li key={it.request.id}>
             <ApprovalCard item={it} />
@@ -52,7 +52,7 @@ function ApprovalCard({ item }: { item: Item }) {
   const hours = p.tasks.reduce((s, t) => s + t.durationMin, 0) / 60;
 
   return (
-    <article className="card grid gap-4" aria-labelledby={`ap-${request.id}`}>
+    <article className="grid gap-4 py-8" aria-labelledby={`ap-${request.id}`}>
       <div className="flex flex-wrap justify-between gap-3 items-start">
         <div>
           <h2 id={`ap-${request.id}`} className="!text-2xl">

@@ -11,7 +11,8 @@ import { classLabel, EQUIPMENT_CLASSES } from "@shared/catalogue";
 import { STAGES, type Stage } from "@shared/domain";
 import { post } from "../../lib/api";
 import type { AiPlan, Project, Safety } from "../../lib/types";
-import { AiNote, Chip, ErrorNote, PageHeader, Skeleton } from "../../components/ui";
+import { AiNote, Chip, ErrorNote, FlaskLoader, PageHeader, Skeleton, Spinner } from "../../components/ui";
+import { Squiggle } from "../../components/Doodles";
 import { SafetyCard } from "./SafetyCard";
 
 const Xray = lazy(() => import("../../three/Xray"));
@@ -59,7 +60,7 @@ export default function NewProject() {
 
   return (
     <>
-      <PageHeader title="What are you building?" lead="Describe it in your own words. Gemini drafts the plan, and you confirm it." />
+      <PageHeader title={<>What are you <Squiggle>building</Squiggle>?</>} note="↘ plain words are fine" lead="Describe it in your own words. Gemini drafts the plan, and you confirm it." doodles="beaker" />
       <form
         className="card grid gap-5"
         onSubmit={(e) => {
@@ -101,18 +102,12 @@ export default function NewProject() {
         </div>
         <ErrorNote error={plan.error} />
         <button className="btn btn-yellow justify-self-start" disabled={plan.isPending || description.trim().length < 10}>
-          {plan.isPending ? "Planning…" : "✦ Plan it"}
+          {plan.isPending ? <><Spinner /> Planning…</> : "✦ Plan it"}
         </button>
         <p className="hand -mt-2" aria-hidden="true">↑ faculty verify your deadline and stage later, so be honest</p>
       </form>
 
-      {plan.isPending && (
-        <div className="grid gap-4 mt-8" role="status">
-          <span className="sr-only">Drafting your plan…</span>
-          <Skeleton className="h-40" />
-          <Skeleton className="h-64" />
-        </div>
-      )}
+      {plan.isPending && <FlaskLoader label="Gemini is drafting your plan" />}
 
       {draft && !plan.isPending && (
         <section className="grid gap-6 mt-10 enter" aria-labelledby="plan-title">
@@ -127,7 +122,7 @@ export default function NewProject() {
           </AiNote>
 
           <div className="grid lg:grid-cols-2 gap-6">
-            <div className="card grid gap-3">
+            <div className="grid gap-3">
               <h3>Lab steps, in order</h3>
               <ol className="grid gap-2">
                 {draft.plan.tasks.map((t, i) => (
@@ -155,7 +150,7 @@ export default function NewProject() {
                 ))}
               </ol>
             </div>
-            <div className="card grid gap-3 content-start">
+            <div className="grid gap-3 content-start lg:border-l lg:border-line lg:pl-6">
               <h3>Project X-Ray</h3>
               {draft.xray.supported ? (
                 <Suspense fallback={<Skeleton className="h-72" />}>
@@ -172,7 +167,7 @@ export default function NewProject() {
           <ErrorNote error={confirm.error} />
           <div className="flex flex-wrap gap-3">
             <button type="button" className="btn btn-primary" onClick={() => confirm.mutate()} disabled={confirm.isPending}>
-              {confirm.isPending ? "Saving…" : "Confirm this plan"}
+              {confirm.isPending ? <><Spinner /> Saving…</> : "Confirm this plan"}
             </button>
             <button type="button" className="btn btn-soft" onClick={() => plan.mutate()} disabled={plan.isPending}>
               Re-plan

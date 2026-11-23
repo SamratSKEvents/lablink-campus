@@ -112,7 +112,8 @@ export async function notify(userIds: string[], text: string, kind: Notification
  * fine for one campus (~100 units, ~1k bookings/week). Add per-class/date queries past that.
  */
 export async function loadContext(now = new Date()): Promise<EngineContext> {
-  const since = new Date(now.getTime() - 7 * 86_400_000).toISOString();
+  // 8 days: covers the full 7-day analytics window plus today.
+  const since = new Date(now.getTime() - 8 * 86_400_000).toISOString();
   const [equipment, labs, users, bookings, eqv] = await Promise.all([
     all<Equipment>(C.equipment),
     all<Lab>(C.labs),

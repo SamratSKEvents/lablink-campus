@@ -32,11 +32,11 @@ export default function SafetySettings() {
   const { user } = useSession();
   return (
     <>
-      <PageHeader title="Safety" lead="Your safety settings, private by default." />
-      <div className="grid lg:grid-cols-2 gap-6">
+      <PageHeader title="Safety" note="↘ private by default" doodles="flask" lead="Your evacuation plan, near-miss reports and certifications." />
+      <div className="grid lg:grid-cols-2 gap-x-12">
         <EvacuationPlan />
         <NearMiss />
-        <section className="card grid gap-3 content-start" aria-labelledby="certs">
+        <section className="section lg:col-span-2 grid gap-3 content-start" aria-labelledby="certs">
           <h2 id="certs" className="!text-xl">Certifications</h2>
           {user?.certifications.length ? (
             <ul className="grid gap-2">
@@ -70,7 +70,7 @@ function EvacuationPlan() {
   const save = useMutation({ mutationFn: () => api("/evacuation", { method: "PUT", body: { needs: curNeeds, instructions: curText } }), onSuccess: () => (toast.success("Evacuation plan saved"), qc.invalidateQueries({ queryKey: ["evac"] })) });
   const remove = useMutation({ mutationFn: () => api("/evacuation", { method: "DELETE" }), onSuccess: () => (setNeeds([]), setInstructions(""), toast.success("Deleted"), qc.invalidateQueries({ queryKey: ["evac"] })) });
   return (
-    <section className="card grid gap-4" aria-labelledby="evac">
+    <section className="section !border-t-0 !pt-0 grid gap-4 content-start" aria-labelledby="evac">
       <h2 id="evac" className="!text-xl">Personal evacuation plan (optional)</h2>
       <p className="meta">If an SOS fires while you're checked in, responders see what help you need. Only during an active incident. You can delete it any time.</p>
       <fieldset className="grid gap-2">
@@ -103,7 +103,7 @@ function NearMiss() {
   const did = useId();
   const m = useMutation({ mutationFn: () => api("/near-misses", { body: { labId, description } }), onSuccess: () => (setDescription(""), toast.success("Thanks. Reported anonymously.")) });
   return (
-    <form className="card grid gap-4 content-start" aria-labelledby="nm" onSubmit={(e) => (e.preventDefault(), m.mutate())}>
+    <form className="section !border-t-0 !pt-0 grid gap-4 content-start lg:border-l lg:border-line lg:pl-10" aria-labelledby="nm" onSubmit={(e) => (e.preventDefault(), m.mutate())}>
       <h2 id="nm" className="!text-xl">Report a near-miss, anonymously</h2>
       <p className="meta">Frayed cable, weak extractor, a spill nobody cleaned? Near-misses come before accidents. We don't store who reported it.</p>
       <label htmlFor={lid} className="label">

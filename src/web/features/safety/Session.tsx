@@ -24,7 +24,7 @@ const PPE = ["Closed shoes and tied-back hair", "Safety glasses on", "I know whe
 export default function Session() {
   const { data, isLoading, error } = useQuery({ queryKey: ["my-bookings"], queryFn: () => api<{ items: MyBooking[] }>("/bookings/mine"), refetchInterval: 30_000 });
   const [sosOpen, setSosOpen] = useState(false);
-  if (isLoading) return <Loading />;
+  if (isLoading) return <Loading label="Finding your bench" />;
   const items = (data?.items ?? []).filter((b) => b.live || b.status === "checked_in");
   const active = items.find((b) => b.status === "checked_in");
   const next = items.find((b) => b.status === "confirmed");
@@ -33,7 +33,7 @@ export default function Session() {
 
   return (
     <>
-      <PageHeader title={active ? `In session: ${active.equipment?.name}` : "Lab session"} lead="Tap your ID at the bench kiosk, confirm your PPE, and you're in." />
+      <PageHeader title={active ? `In session: ${active.equipment?.name}` : "Lab session"} note="↘ safety first, then science" doodles="flask" lead="Tap your ID at the bench kiosk, confirm your PPE, and you're in." />
       <ErrorNote error={error} />
       <div className="grid lg:grid-cols-[1fr_340px] gap-6">
         <div className="grid gap-6 content-start">
@@ -45,7 +45,7 @@ export default function Session() {
           {active && <ActiveSession booking={active} />}
           {!active && next && <CheckIn booking={next} />}
           {items.filter((b) => b !== focus).length > 0 && (
-            <section className="card">
+            <section className="section">
               <h2 className="!text-xl mb-3">Later</h2>
               <ul className="grid gap-2">
                 {items.filter((b) => b !== focus).map((b) => (

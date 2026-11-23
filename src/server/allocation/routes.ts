@@ -178,7 +178,7 @@ allocationRouter.post(
       names: Object.fromEntries(contenders.map((c) => [c.user.id, c.user.name])),
       projects: Object.fromEntries(contenders.map((c) => [c.user.id, { title: c.project.title, emoji: c.project.emoji, deadline: c.project.deadline, verified: Boolean(c.project.verifiedBy), stage: c.project.stage }])),
       equipment: { id: scope.id, name: scope.name },
-      fairness: { giniBefore: gini(hoursBefore), giniLabLink: gini(hoursAfter), giniFcfs: gini(hoursFcfs), fcfsWinner: fcfsWinner.user.name, labLinkWinner: winner?.user.name ?? null },
+      fairness: { giniBefore: gini(hoursBefore), giniLabLink: gini(hoursAfter), giniFcfs: gini(hoursFcfs), fcfsWinner: fcfsWinner.user.name, labLinkWinner: winner?.user.name ?? null, hoursLabLink: hoursAfter, hoursFcfs },
     });
   }),
 );

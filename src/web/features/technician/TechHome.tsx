@@ -21,12 +21,12 @@ export default function TechHome() {
 
   return (
     <>
-      <PageHeader title="Today in my labs" lead="Units, alerts, certifications and safety patterns for your department." action={activeIncidents > 0 && <Link to="/incidents" className="btn btn-danger">{activeIncidents} active incident{activeIncidents > 1 ? "s" : ""}</Link>} />
+      <PageHeader title="Today in my labs" note="↘ keep it safe, keep it moving" doodles="beaker" lead="Units, alerts, certifications and safety patterns for your department." action={activeIncidents > 0 && <Link to="/incidents" className="btn btn-danger">{activeIncidents} active incident{activeIncidents > 1 ? "s" : ""}</Link>} />
       <ErrorNote error={eq.error} />
-      <div className="grid lg:grid-cols-2 gap-6">
-        <section className="card grid gap-3 content-start" aria-labelledby="units">
+      <div className="grid lg:grid-cols-2 gap-x-12">
+        <section className="section !border-t-0 !pt-0 grid gap-3 content-start" aria-labelledby="units">
           <h2 id="units" className="!text-xl">Equipment ({mine.length})</h2>
-          {eq.isLoading && <Loading />}
+          {eq.isLoading && <Loading label="Checking every bench" />}
           {attention.length > 0 && <p className="meta">{attention.length} unit(s) need attention.</p>}
           <ul className="grid gap-1 max-h-[420px] overflow-auto">
             {[...attention, ...mine.filter((e) => !attention.includes(e))].map((e) => (
@@ -57,7 +57,7 @@ function Certify() {
   const qc = useQueryClient();
   const student = q.data?.students.find((s) => s.id === userId);
   return (
-    <section className="card grid gap-3 content-start" aria-labelledby="certify">
+    <section className="section !border-t-0 !pt-0 grid gap-3 content-start lg:border-l lg:border-line lg:pl-10" aria-labelledby="certify">
       <h2 id="certify" className="!text-xl">Certify after hands-on training</h2>
       <label className="label">
         Student
@@ -106,7 +106,7 @@ function Certify() {
 function NearMissPatterns() {
   const q = useQuery({ queryKey: ["near-miss"], queryFn: () => api<{ clusters: { title: string; reportIds: string[]; action: string }[]; source: string; reports: { id: string; where: string; description: string }[] }>("/near-misses/clusters") });
   return (
-    <section className="card grid gap-3 content-start lg:col-span-2" aria-labelledby="nm">
+    <section className="section grid gap-3 content-start lg:col-span-2" aria-labelledby="nm">
       <h2 id="nm" className="!text-xl">Near-miss patterns</h2>
       <ErrorNote error={q.error} />
       {q.data && q.data.clusters.length === 0 && <p className="meta">No patterns yet. {q.data.reports.length} anonymous report(s).</p>}

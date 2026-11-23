@@ -1,6 +1,6 @@
 /** App shell: skip link, role-aware navigation, notifications, SOS, judge tour. */
 import { Popover } from "@base-ui/react/popover";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useIsFetching, useIsMutating, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, LogOut } from "lucide-react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import type { Role } from "@shared/domain";
@@ -8,6 +8,7 @@ import { api, post } from "../lib/api";
 import { useSession } from "../lib/auth";
 import { SosButton, useDefaultSosContext } from "./Sos";
 import { JudgeTour } from "./JudgeTour";
+import { BackgroundDoodles } from "./Doodles";
 
 const NAV: Record<Role, { to: string; label: string }[]> = {
   student: [
@@ -54,26 +55,51 @@ export function Logo() {
 export function Layout() {
   const { user, kiosk, signOut } = useSession();
   const sos = useDefaultSosContext();
-  if (!user) return null;
+  // Signed out: still render the route, so its guard can redirect to sign-in.
+  if (!user) return <Outlet />;
   const links = kiosk ? [{ to: "/session", label: "Lab session" }] : NAV[user.role];
+  return <Shell links={links} kiosk={kiosk} name={user.name} role={user.role} signOut={signOut} sos={sos} />;
+}
+
+function Shell({
+  links,
+  kiosk,
+  name,
+  role,
+  signOut,
+  sos,
+}: {
+  links: { to: string; label: string }[];
+  kiosk: boolean;
+  name: string;
+  role: Role;
+  signOut: () => Promise<void>;
+  sos: ReturnType<typeof useDefaultSosContext>;
+}) {
+  // Background polls (notifications, live maps) shouldn't flash the loading bar.
+  const POLLS = ["notifications", "labs", "incidents", "my-bookings"];
+  const busy =
+    useIsFetching({ predicate: (q) => !POLLS.includes(String(q.queryKey[0])) }) + useIsMutating() > 0;
   return (
     <div className="min-h-dvh">
       <a href="#main" className="skip-link btn btn-primary">
         Skip to content
       </a>
+      <BackgroundDoodles />
       <header className="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-line">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center gap-4">
+        {busy && <div className="topbar" role="progressbar" aria-label="Loading" />}
+        <div className="max-w-6xl mx-auto px-4 h-[76px] flex items-center gap-6 lg:gap-10">
           <NavLink to="/" className="shrink-0 rounded-lg">
             <Logo />
           </NavLink>
           <nav aria-label="Main" className="flex-1 overflow-x-auto">
-            <ul className="flex gap-1">
+            <ul className="flex gap-1.5">
               {links.map((l) => (
                 <li key={l.to}>
                   <NavLink
                     to={l.to}
                     className={({ isActive }) =>
-                      `inline-flex items-center min-h-11 px-3 rounded-full text-sm font-semibold whitespace-nowrap transition-colors duration-[var(--dur-fast)] ${isActive ? "bg-subtle text-ink" : "text-ink-2 hover:text-ink hover:bg-subtle"}`
+                      `inline-flex items-center min-h-11 px-4 rounded-full text-[0.9375rem] font-semibold whitespace-nowrap transition-colors duration-[var(--dur-fast)] ${isActive ? "bg-subtle text-ink" : "text-ink-2 hover:text-ink hover:bg-subtle"}`
                     }
                   >
                     {l.label}
@@ -82,19 +108,31 @@ export function Layout() {
               ))}
             </ul>
           </nav>
-          <Notifications />
-          {user.role !== "security" && <SosButton context={sos} compact />}
-          <button type="button" className="btn btn-soft btn-sm !px-3" onClick={signOut} aria-label={`Sign out ${user.name}`}>
-            <LogOut size={16} aria-hidden="true" />
-            <span className="hidden md:inline">{user.name.split(" ")[0]}</span>
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {!kiosk && <JudgeTour />}
+            <Notifications />
+            {role !== "security" && <SosButton context={sos} compact />}
+            <span className="w-px h-7 bg-line mx-1" aria-hidden="true" />
+            <button
+              type="button"
+              className="btn btn-soft btn-sm !px-3"
+              onClick={signOut}
+              aria-label={`Sign out ${name}`}
+            >
+              <LogOut size={16} aria-hidden="true" />
+              <span className="hidden md:inline">{name.split(" ")[0]}</span>
+            </button>
+          </div>
         </div>
-        {kiosk && <p className="text-center text-sm bg-yellow-tint text-yellow-ink py-1">Kiosk session: signs out after 2 minutes idle.</p>}
+        {kiosk && (
+          <p className="text-center text-sm bg-yellow-tint text-yellow-ink py-1">
+            Kiosk session: signs out after 2 minutes idle.
+          </p>
+        )}
       </header>
-      <main id="main" tabIndex={-1} className="max-w-6xl mx-auto px-4 py-10 outline-none">
+      <main id="main" tabIndex={-1} className="max-w-6xl mx-auto px-4 py-10 pb-24 outline-none">
         <Outlet />
       </main>
-      {!kiosk && <JudgeTour />}
     </div>
   );
 }
@@ -110,7 +148,11 @@ interface Note {
 
 function Notifications() {
   const qc = useQueryClient();
-  const { data } = useQuery({ queryKey: ["notifications"], queryFn: () => api<{ items: Note[] }>("/notifications"), refetchInterval: 15_000 });
+  const { data } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: () => api<{ items: Note[] }>("/notifications"),
+    refetchInterval: 15_000,
+  });
   const items = data?.items ?? [];
   const unread = items.filter((n) => !n.read);
   const markRead = async () => {
@@ -120,10 +162,16 @@ function Notifications() {
   };
   return (
     <Popover.Root onOpenChange={(o) => !o && void markRead()}>
-      <Popover.Trigger className="btn btn-soft btn-sm !px-3 relative" aria-label={`Notifications, ${unread.length} unread`}>
+      <Popover.Trigger
+        className="btn btn-soft btn-sm !px-3 relative"
+        aria-label={`Notifications, ${unread.length} unread`}
+      >
         <Bell size={16} aria-hidden="true" />
         {unread.length > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-ink text-white text-xs grid place-items-center" aria-hidden="true">
+          <span
+            className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-ink text-white text-xs grid place-items-center"
+            aria-hidden="true"
+          >
             {unread.length}
           </span>
         )}
@@ -141,12 +189,23 @@ function Notifications() {
               <ul className="grid">
                 {items.map((n) => (
                   <li key={n.id}>
-                    <Link to={n.link ?? "#"} className={`block px-3 py-2.5 rounded-xl hover:bg-subtle ${n.read ? "text-ink-2" : ""}`}>
-                      <span className={`chip tone-${n.kind === "alert" ? "red" : n.kind === "warning" ? "orange" : n.kind === "success" ? "green" : "neutral"} !p-0 !bg-transparent mr-1`}>
+                    <Link
+                      to={n.link ?? "#"}
+                      className={`block px-3 py-2.5 rounded-xl hover:bg-subtle ${n.read ? "text-ink-2" : ""}`}
+                    >
+                      <span
+                        className={`chip tone-${n.kind === "alert" ? "red" : n.kind === "warning" ? "orange" : n.kind === "success" ? "green" : "neutral"} !p-0 !bg-transparent mr-1`}
+                      >
                         <span className="dot" aria-hidden="true" />
                       </span>
                       <span className="text-sm">{n.text}</span>
-                      <span className="block meta text-xs mt-0.5">{new Date(n.at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" })}</span>
+                      <span className="block meta text-xs mt-0.5">
+                        {new Date(n.at).toLocaleString("en-IN", {
+                          timeZone: "Asia/Kolkata",
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
+                      </span>
                     </Link>
                   </li>
                 ))}

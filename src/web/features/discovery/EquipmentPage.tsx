@@ -23,7 +23,7 @@ export default function EquipmentPage() {
   const { id = "" } = useParams();
   const { user } = useSession();
   const { data, isLoading, error } = useQuery({ queryKey: ["equipment-detail", id], queryFn: () => api<Detail>(`/equipment/${id}`) });
-  if (isLoading) return <Loading />;
+  if (isLoading) return <Loading label="Checking the bench" />;
   if (error || !data) return <ErrorNote error={error} />;
   const { equipment: e, lab, equivalents, schedule } = data;
   const st = LIVE_STATUS[e.liveStatus]!;
@@ -51,15 +51,15 @@ export default function EquipmentPage() {
         )}
       </header>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <section className="card" aria-labelledby="sched">
+      <div className="grid md:grid-cols-2 gap-10 pt-8 border-t border-line">
+        <section aria-labelledby="sched">
           <h2 id="sched" className="!text-xl mb-3">Coming up</h2>
           {schedule.length === 0 ? (
             <p className="meta">Nothing booked. It's all yours.</p>
           ) : (
-            <ul className="grid gap-2">
+            <ul className="rows">
               {schedule.map((s) => (
-                <li key={`${s.start}-${s.seat}`} className="task-row">
+                <li key={`${s.start}-${s.seat}`} className="flex items-center gap-3 py-2.5">
                   <Chip tone={s.status === "held" ? "yellow" : "orange"}>{s.status === "held" ? "Held" : "Booked"}</Chip>
                   <span className="text-sm">{formatRange(s.start, s.end)}</span>
                 </li>
@@ -67,7 +67,7 @@ export default function EquipmentPage() {
             </ul>
           )}
         </section>
-        <section className="card grid gap-3 content-start" aria-labelledby="eqv">
+        <section className="grid gap-3 content-start" aria-labelledby="eqv">
           <h2 id="eqv" className="!text-xl">Can I use something else?</h2>
           {equivalents.length === 0 && <p className="meta">No verified equivalents yet.</p>}
           {equivalents.map((q) => (
@@ -81,7 +81,7 @@ export default function EquipmentPage() {
       </div>
 
       {Object.keys(e.specs).length > 0 && (
-        <section className="card" aria-labelledby="specs">
+        <section className="section" aria-labelledby="specs">
           <h2 id="specs" className="!text-xl mb-3">Specs</h2>
           <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {Object.entries(e.specs).map(([k, v]) => (
@@ -94,7 +94,7 @@ export default function EquipmentPage() {
         </section>
       )}
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3 pt-6 border-t border-line">
         <FaultReport equipmentId={e.id} name={e.name} />
         {(user?.role === "technician" || user?.role === "admin") && <StatusChange equipmentId={e.id} current={e.status} />}
       </div>

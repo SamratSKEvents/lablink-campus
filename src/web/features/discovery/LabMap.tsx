@@ -40,14 +40,14 @@ export default function LabMap() {
 
   return (
     <>
-      <PageHeader title="Lab map" lead="Every lab across campus, live. Pick a red unit to see where its work can move." action={<ViewToggle mode={mode} onChange={setMode} />} />
+      <PageHeader title="Lab map" note="↘ live, across campus" doodles="atom" lead="Every lab across campus, live. Pick a red unit to see where its work can move." action={<ViewToggle mode={mode} onChange={setMode} />} />
       <div className="flex flex-wrap gap-2 mb-4" aria-label="Status legend">
         {Object.entries(LIVE_STATUS).map(([k, v]) => (
           <Chip key={k} tone={v.tone}>{v.label} · {counts[k] ?? 0}</Chip>
         ))}
       </div>
       <ErrorNote error={error} />
-      {isLoading && <Loading label="Loading the map" />}
+      {isLoading && <Loading label="Walking the corridors" />}
       {data && (
         <div className="grid lg:grid-cols-[1fr_320px] gap-6">
           {mode === "3d" ? (
@@ -57,9 +57,9 @@ export default function LabMap() {
               </Suspense>
             </section>
           ) : (
-            <section className="grid gap-4 sm:grid-cols-2" aria-label="Labs and their equipment">
+            <section className="grid gap-x-8 gap-y-6 sm:grid-cols-2" aria-label="Labs and their equipment">
               {labs.map((l) => (
-                <div key={l.id} className="card !p-4">
+                <div key={l.id} className="pb-4 border-b border-line">
                   <h2 className="!text-lg">{l.name}</h2>
                   <p className="meta mb-2">{l.building}</p>
                   <ul className="grid gap-1">
@@ -76,7 +76,7 @@ export default function LabMap() {
               ))}
             </section>
           )}
-          <aside className="card grid gap-3 content-start" aria-live="polite" aria-label="Selected unit">
+          <aside className="grid gap-3 content-start lg:border-l lg:border-line lg:pl-6 lg:sticky lg:top-24 self-start" aria-live="polite" aria-label="Selected unit">
             {!unit ? (
               <p className="meta">Select a unit on the map or in the list.</p>
             ) : (
